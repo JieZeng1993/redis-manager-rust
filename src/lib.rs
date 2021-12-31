@@ -1,9 +1,9 @@
 pub mod service;
-pub mod entity;
+pub mod domain;
 pub mod mapper;
 pub mod config;
 pub mod mix;
-mod controller;
+pub mod rest;
 
 #[macro_use]
 extern crate rbatis;

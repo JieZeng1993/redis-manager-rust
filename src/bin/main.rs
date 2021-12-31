@@ -16,6 +16,7 @@ use tracing::{Level, span};
 use tracing::info;
 
 use redis_manager_rust::config::log;
+use redis_manager_rust::rest::user1_rest::User1Rest;
 
 #[derive(Tags)]
 enum ApiTags {
@@ -152,14 +153,16 @@ async fn main() -> Result<(), std::io::Error> {
         std::env::set_var("RUST_LOG", "poem=debug");
     }
 
-    // let span = span!(Level::TRACE, "my span");
-    // let _enter = span.enter();
+    tracing_subscriber::fmt::init();
 
-    let api_service =
-        OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
-    let ui = api_service.swagger_ui();
+    let user1_rest = OpenApiService::new(User1Rest::default(), "user1","1.1")
+        .server("http://localhost:3000/api");
+
+    // let api_service =
+    //     OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
+    let swagger_ui = user1_rest.swagger_ui();
 
     Server::new(TcpListener::bind("127.0.0.1:3000"))
-        .run(Route::new().nest("/api", api_service).nest("/", ui))
+        .run(Route::new().nest("/api", user1_rest).nest("/swagger_ui", swagger_ui))
         .await
 }

@@ -7,12 +7,13 @@ pub use crate::config::app_config::ApplicationConfig;
 pub mod cache_service;
 pub mod mem_service;
 pub mod redis_service;
+mod user1_service;
 
 pub struct ServiceContext {
     pub config: ApplicationConfig,
     pub rbatis: Rbatis,
     pub cache_service: CacheService,
-
+    pub user1_service: user1_service::User1Service
     //service
     // pub sys_res_service: SysResService,
     // pub sys_user_service: SysUserService,
@@ -48,6 +49,7 @@ impl Default for ServiceContext {
         ServiceContext {
             rbatis: rabits,
             cache_service: CacheService::new(&config),
+            user1_service: user1_service::User1Service{},
             // sys_res_service: SysResService {},
             // sys_user_service: SysUserService {},
             // sys_role_service: SysRoleService {},

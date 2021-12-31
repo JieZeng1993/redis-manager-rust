@@ -1,6 +1,7 @@
 use rbatis::DateTimeNative;
 
-mod user;
+pub mod entity;
+pub mod vo;
 
 #[crud_table]
 #[derive(Clone, Debug)]
