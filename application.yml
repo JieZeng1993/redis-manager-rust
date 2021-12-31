@@ -5,7 +5,7 @@ server_name: "dev"
 #server 地址
 server_url: "0.0.0.0:8000"
 #缓存介质类型,单选("mem","redis")
-cache_type: "mem"
+cache_type: "redis"
 #redis地址(cache_type为“redis”时有效)
 redis_url: "redis://mubuntu:6379"
 redis_password: "123456"

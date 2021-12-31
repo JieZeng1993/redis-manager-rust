@@ -11,15 +11,15 @@ pub fn init_log() {
     //由于涉及到CONTEXT,会自动帮我们注册上去
     std::fs::create_dir_all(&CONTEXT.config.log_dir);
     //init fast log
-    fast_log::init_split_log(
-        &CONTEXT.config.log_dir,
-        LogSize::MB(CONTEXT.config.log_cup as usize),
-        str_to_rolling(&CONTEXT.config.log_rolling_type),
-        str_to_log_level(&CONTEXT.config.log_level),
-        None,
-        choose_packer(&CONTEXT.config.log_pack_compress),
-        CONTEXT.config.debug,
-    );
+    // fast_log::init_split_log(
+    //     &CONTEXT.config.log_dir,
+    //     LogSize::MB(CONTEXT.config.log_cup as usize),
+    //     str_to_rolling(&CONTEXT.config.log_rolling_type),
+    //     str_to_log_level(&CONTEXT.config.log_level),
+    //     None,
+    //     choose_packer(&CONTEXT.config.log_pack_compress),
+    //     CONTEXT.config.debug,
+    // );
     if CONTEXT.config.debug == false {
         println!("[abs_admin] release_mode is up! [file_log] open,[console_log] disabled!");
     }

@@ -27,6 +27,7 @@ pub struct CacheService {
 
 impl CacheService {
     pub fn new(cfg: &ApplicationConfig) -> Self {
+        println!("开始初始化缓存");
         Self {
             inner: match cfg.cache_type.as_str() {
                 "redis" => Box::new(RedisService::new(&cfg.redis_url)),

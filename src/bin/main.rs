@@ -12,10 +12,10 @@ use rbatis::crud::CRUD;
 use rbatis::rbatis::Rbatis;
 use slab::Slab;
 use tokio::sync::Mutex;
+use tracing::{Level, span};
+use tracing::info;
 
 use redis_manager_rust::config::log;
-use tracing::info;
-use tracing_subscriber;
 
 #[derive(Tags)]
 enum ApiTags {
@@ -144,15 +144,16 @@ impl Api {
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
+    println!("开始初始化");
+    log::init_log();
+    println!("开始初始化1");
 
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "poem=debug");
     }
-    tracing_subscriber::fmt::init();
 
-    println!("开始初始化");
-    log::init_log();
-    println!("开始初始化1");
+    // let span = span!(Level::TRACE, "my span");
+    // let _enter = span.enter();
 
     let api_service =
         OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
