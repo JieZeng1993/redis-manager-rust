@@ -15,8 +15,7 @@ enum ApiTags {
     User1,
 }
 
-
-pub struct User1Rest;
+pub struct User2Rest ;
 
 #[derive(ApiResponse)]
 enum FindUserResponse {
@@ -26,25 +25,20 @@ enum FindUserResponse {
     /// Return when the specified user is not found.
     #[oai(status = 404)]
     NotFound,
-    #[oai(status = 500)]
-    InnerError,
 }
 
 #[OpenApi]
-impl User1Rest {
+impl User2Rest {
     /// Find user by id
-    #[oai(path = "/user1/:user_id", method = "get", tag = "ApiTags::User1")]
+    #[oai(path = "/user2/:user_id", method = "get", tag = "ApiTags::User1")]
     async fn find_user(&self, user_id: Path<i64>) -> FindUserResponse {
         let user = CONTEXT.user1_service.find(user_id.0).await;
         match user {
             Ok(user) => match user {
                 Some(user) => FindUserResponse::Ok(Json(RespVO::from(&user))),
-                None => FindUserResponse::NotFound,
+                _None => FindUserResponse::NotFound,
             },
-            Err(_) => {
-                tracing::error!(name = "user1", "server started");
-                FindUserResponse::InnerError
-            },
+            Err(_) => FindUserResponse::NotFound,
         }
     }
 }

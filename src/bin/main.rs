@@ -14,9 +14,11 @@ use slab::Slab;
 use tokio::sync::Mutex;
 use tracing::{Level, span};
 use tracing::info;
-
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{fmt, subscribe::CollectExt, EnvFilter};
 use redis_manager_rust::config::log;
 use redis_manager_rust::rest::user1_rest::User1Rest;
+use redis_manager_rust::rest::user2_rest::User2Rest;
 
 #[derive(Tags)]
 enum ApiTags {
@@ -153,16 +155,25 @@ async fn main() -> Result<(), std::io::Error> {
         std::env::set_var("RUST_LOG", "poem=debug");
     }
 
-    tracing_subscriber::fmt::init();
+    //发送链路数据
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name("redis-manager-rust")
+        .install_simple().unwrap();
+    let opentelemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 
-    let user1_rest = OpenApiService::new(User1Rest::default(), "user1","1.1")
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::TRACE.into()))
+        .with(opentelemetry)
+        .try_init().unwrap();
+
+    let api = OpenApiService::new((User1Rest, User2Rest), "api", "1.1")
         .server("http://localhost:3000/api");
-
     // let api_service =
     //     OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
-    let swagger_ui = user1_rest.swagger_ui();
+    let swagger_ui = api.swagger_ui();
 
     Server::new(TcpListener::bind("127.0.0.1:3000"))
-        .run(Route::new().nest("/api", user1_rest).nest("/swagger_ui", swagger_ui))
+        .run(Route::new().nest("/api", api)
+            .nest("/swagger_ui", swagger_ui))
         .await
 }

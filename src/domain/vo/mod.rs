@@ -1,24 +1,27 @@
 use poem_openapi::Object;
 use poem_openapi::payload::Payload;
 use poem_openapi::registry::MetaSchemaRef;
+use poem_openapi::types::{ParseFromJSON, ToJSON};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
 use crate::mix::error::Error;
 use crate::service::CONTEXT;
 
+pub mod user1;
+
 pub const CODE_SUCCESS: &str = "SUCCESS";
 pub const CODE_FAIL: &str = "FAIL";
 
 /// http接口返回模型结构，提供基础的 code，msg，data 等json数据结构
-#[derive(Debug, Object, Clone, Eq, PartialEq)]
-pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type {
+#[derive(Debug,Object, Clone, Eq, PartialEq)]
+pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON {
     pub code: Option<String>,
     pub msg: Option<String>,
     pub data: Option<T>,
 }
 
-impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type
+impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON  + ToJSON
 {
     pub fn from_result(arg: &Result<T, Error>) -> Self {
         if arg.is_ok() {
@@ -80,11 +83,11 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type
     // }
 }
 
-impl<T> ToString for RespVO<T>
-    where
-        T: Sync + Send + Clone + poem_openapi::types::Type
-{
-    fn to_string(&self) -> String {
-        serde_json::to_string(self).unwrap()
-    }
-}
+// impl<T> ToString for RespVO<T>
+//     where
+//         T: Sync + Send + Clone + poem_openapi::types::Type
+// {
+//     fn to_string(&self) -> String {
+//         serde_json::to_string(self).unwrap()
+//     }
+// }
