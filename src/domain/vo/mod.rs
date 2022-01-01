@@ -9,12 +9,14 @@ use crate::mix::error::Error;
 use crate::service::CONTEXT;
 
 pub mod user1;
+pub mod user;
 
 pub const CODE_SUCCESS: &str = "SUCCESS";
 pub const CODE_FAIL: &str = "FAIL";
 
 /// http接口返回模型结构，提供基础的 code，msg，data 等json数据结构
 #[derive(Debug,Object, Clone, Eq, PartialEq)]
+#[oai(inline)]
 pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON {
     pub code: Option<String>,
     pub msg: Option<String>,
@@ -44,6 +46,14 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             code: Some(CODE_SUCCESS.to_string()),
             msg: None,
             data: Some(arg.clone()),
+        }
+    }
+
+    pub fn no_data() -> Self {
+        Self {
+            code: Some(CODE_SUCCESS.to_string()),
+            msg: None,
+            data: None,
         }
     }
 

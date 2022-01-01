@@ -8,6 +8,7 @@ pub mod cache_service;
 pub mod mem_service;
 pub mod redis_service;
 mod user1_service;
+mod user_service;
 
 pub struct ServiceContext {
     pub config: ApplicationConfig,

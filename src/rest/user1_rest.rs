@@ -1,12 +1,13 @@
 use poem_openapi::{
-    param::Path,
-    payload::Json,
+    ApiResponse,
+    Object,
     // types::{Email, Password},
-    ApiResponse, Object, OpenApi, OpenApiService, Tags,
+    OpenApi, OpenApiService, param::Path, payload::Json, Tags,
 };
-use crate::domain::vo::user1::User1Vo;
 
+use crate::domain::dto::user1::User1UpdateDto;
 use crate::domain::vo::RespVO;
+use crate::domain::vo::user1::User1Vo;
 use crate::service::CONTEXT;
 
 #[derive(Tags)]
@@ -30,6 +31,18 @@ enum FindUserResponse {
     InnerError,
 }
 
+#[derive(ApiResponse)]
+enum UpdateUserResponse {
+    /// Return the specified user.
+    #[oai(status = 200)]
+    Ok(Json<RespVO<u64>>),
+    /// Return when the specified user is not found.
+    #[oai(status = 404)]
+    NotFound,
+    #[oai(status = 500)]
+    InnerError,
+}
+
 #[OpenApi]
 impl User1Rest {
     /// Find user by id
@@ -44,7 +57,19 @@ impl User1Rest {
             Err(_) => {
                 log::error!("server started");
                 FindUserResponse::InnerError
-            },
+            }
+        }
+    }
+
+    #[oai(path = "/user1", method = "put", tag = "ApiTags::User1")]
+    async fn update_user(&self, user1_update_dto: Json<User1UpdateDto>) -> UpdateUserResponse {
+        let user = CONTEXT.user1_service.update(user1_update_dto.0).await;
+        match user {
+            Ok(user) => UpdateUserResponse::Ok(Json(RespVO::from(&user))),
+            Err(_) => {
+                log::error!("update error");
+                UpdateUserResponse::InnerError
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 use rbatis::crud::CRUD;
+use crate::domain::dto::user1::User1UpdateDto;
 
 use crate::domain::entity::user1::User1;
 use crate::domain::vo::user1::User1Vo;
@@ -16,6 +17,11 @@ impl User1Service {
             Some(user1) => Ok(Some(user1.convert2vo())),
             None => Ok(None)
         }
+    }
+
+    ///后台用户根据id查找
+    pub async fn update(&self, user1_update_dto: User1UpdateDto) -> Result<u64> {
+        Ok(CONTEXT.rbatis.update_by_column("id", &mut user1_update_dto.convert2entity()).await?)
     }
 
     /// 内部查询使用entity，到rest层再转为Vo
