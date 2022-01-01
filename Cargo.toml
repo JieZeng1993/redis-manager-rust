@@ -6,16 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poem = "1.2.16"
-poem-openapi = { version = "1.2.17", features = ["swagger-ui", "email"] }
+poem = {version = "1.2.16", features = ["opentelemetry", "prometheus"]}
+poem-openapi = { version = "1.2.17", features = ["swagger-ui", "email","chrono"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 slab = "0.4.5"
 
 tracing= "0.1"
 tracing-subscriber = "0.3"
-tracing-opentelemetry = "0.16"
-opentelemetry = { version = "0.16", default-features = false, features = ["trace"] }
-opentelemetry-jaeger = "0.15.0"
+#tracing-log = "0.1"
+#tracing-opentelemetry = "0.16"
+#opentelemetry = { version = "0.16", default-features = false, features = ["trace"] }
+#opentelemetry-jaeger = { version = "0.15.0", features = ["rt-tokio", "collector_client"] }
+
+
 rbatis = { version = "3", default-features = false, features = ["runtime-async-std-rustls", "mysql"] }
 
 
@@ -36,3 +39,5 @@ async-trait = "0.1"
 redis = { version = "*", features = ["async-std-comp"] }
 
 yaml-rust = "0.4"
+
+chrono = "0.4"

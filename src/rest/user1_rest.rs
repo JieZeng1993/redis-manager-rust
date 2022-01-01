@@ -42,7 +42,7 @@ impl User1Rest {
                 None => FindUserResponse::NotFound,
             },
             Err(_) => {
-                tracing::error!(name = "user1", "server started");
+                log::error!("server started");
                 FindUserResponse::InnerError
             },
         }
