@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poem = {version = "1.2.16", features = ["opentelemetry", "prometheus"]}
-poem-openapi = { version = "1.2.17", features = ["swagger-ui", "email","chrono"] }
+poem = {version = "1", features = ["opentelemetry", "prometheus"]}
+poem-openapi = { version = "1", features = ["swagger-ui", "email","chrono"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 slab = "0.4.5"
 
@@ -41,3 +41,5 @@ redis = { version = "*", features = ["async-std-comp"] }
 yaml-rust = "0.4"
 
 chrono = "0.4"
+
+rand = "0.8"

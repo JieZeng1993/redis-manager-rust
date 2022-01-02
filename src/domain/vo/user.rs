@@ -8,3 +8,11 @@ pub struct UserVo {
     pub create_time: Option<DateTime<Local>>,
 }
 
+#[derive(Debug, Object, Clone, Eq, PartialEq, Default)]
+pub struct LoginVo {
+    pub id: Option<i32>,
+    pub name: Option<String>,
+    pub authorization: Option<String>,
+    pub create_time: Option<DateTime<Local>>,
+    pub create_id: Option<i32>,
+}
