@@ -46,8 +46,11 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
     async fn call(&self, mut req: Request) -> poem::Result<Self::Output> {
         let uri = req.uri();
         log!(Level::Info,"request uri:{}", uri);
-        if uri.eq("/api/user/login") {
+
+        if uri.eq("/api/user/login") || uri.eq("/favicon.ico") {
             //登录接口跳过鉴权
+            return self.ep.call(req).await;
+        }else if uri.to_string().starts_with("/swagger_ui"){
             return self.ep.call(req).await;
         }
 
