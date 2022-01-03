@@ -1,10 +1,9 @@
 use std::ops::Deref;
 use std::time::Duration;
 
+use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-
-use async_trait::async_trait;
 
 use crate::config::app_config::ApplicationConfig;
 use crate::mix::error::Result;
@@ -29,11 +28,18 @@ impl CacheService {
     pub fn new(cfg: &ApplicationConfig) -> Self {
         println!("开始初始化缓存");
         Self {
-            inner: match cfg.cache_type.as_str() {
-                "redis" => Box::new(RedisService::new(&cfg.redis_url)),
-                //"mem"
-                _ => Box::new(MemService::default()),
-            },
+            inner: Box::new(RedisService::new(
+                cfg.redis_host.clone(),
+                cfg.redis_port,
+                cfg.redis_db,
+                match &cfg.redis_username {
+                    Some(redis_username) => Some(redis_username.clone()),
+                    None => None
+                },
+                match &cfg.redis_password {
+                    Some(redis_password) => Some(redis_password.clone()),
+                    None => None
+                }, )),
         }
     }
 

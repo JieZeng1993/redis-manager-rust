@@ -28,20 +28,6 @@ pub struct ServiceContext {
 impl Default for ServiceContext {
     fn default() -> Self {
         let config = ApplicationConfig::default();
-        match config.cache_type.as_str() {
-            "mem" => {
-                println!("[abs_admin] cache_type: mem");
-            }
-            "redis" => {
-                println!("[abs_admin] cache_type: redis");
-            }
-            e => {
-                panic!("[abs_admin] unsupport of cache_type: \"{}\"", e);
-            }
-        }
-        // let rt = tokio::runtime::Builder::new_current_thread()
-        //     .enable_all()
-        //     .build();
         let rabits = tokio::task::block_in_place(||{
             tokio::runtime::Handle::current().block_on(async {
                 crate::mapper::init_rbatis(&config).await

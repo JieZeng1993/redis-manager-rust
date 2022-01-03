@@ -23,10 +23,10 @@ use tracing::{debug, Level, span};
 /*use tracing::info;
 use tracing_subscriber::{filter::LevelFilter, prelude::*};*/
 use tracing_subscriber::fmt;
+use redis_manager_rust::config::auth::HeaderAuth;
 
 use redis_manager_rust::config::log as rabit_log;
 use redis_manager_rust::rest::user1_rest::User1Rest;
-use redis_manager_rust::rest::user2_rest::User2Rest;
 use redis_manager_rust::rest::user_rest::UserRest;
 
 // fn init_tracer() -> Tracer {
@@ -51,7 +51,7 @@ async fn main() -> Result<(), std::io::Error> {
         .with_max_level(tracing::Level::TRACE)
         .init();
 
-    let api = OpenApiService::new((User1Rest, User2Rest,UserRest), "api", "1.1")
+    let api = OpenApiService::new((User1Rest,UserRest), "api", "1.1")
         .server("http://localhost:3000/api");
     // let api_service =
     //     OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
@@ -62,6 +62,9 @@ async fn main() -> Result<(), std::io::Error> {
     Server::new(TcpListener::bind("127.0.0.1:3000"))
         .run(Route::new().nest("/api", api)
             .nest("/swagger_ui", swagger_ui)
+                 .with( HeaderAuth{
+                     header_key: "Authorization".to_string()
+                 })
             // .data(tracer.clone())
             // .with(OpenTelemetryMetrics::new())
             // .with(OpenTelemetryTracing::new(tracer))

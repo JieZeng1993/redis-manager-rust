@@ -1,5 +1,5 @@
-use yaml_rust::{Yaml, YamlLoader};
 use getset::{CopyGetters, Getters, MutGetters, Setters};
+use yaml_rust::{Yaml, YamlLoader};
 
 ///服务启动配置
 #[derive(Getters, Setters, MutGetters, CopyGetters)]
@@ -9,8 +9,11 @@ pub struct ApplicationConfig {
     ///当前服务地址
     pub server_url: String,
     ///redis地址
-    pub redis_url: String,
+    pub redis_host: String,
+    pub redis_port: u16,
     pub redis_password: Option<String>,
+    pub redis_username: Option<String>,
+    pub redis_db: i64,
     /// 数据库地址
     pub database_url: String,
     /// 逻辑删除字段
@@ -35,8 +38,6 @@ pub struct ApplicationConfig {
     pub jwt_secret: String,
     ///白名单接口
     pub white_list_api: Vec<String>,
-    ///权限缓存类型
-    pub cache_type: String,
     ///重试
     pub login_fail_retry: i64,
     ///重试等待时间
@@ -59,13 +60,18 @@ impl Default for ApplicationConfig {
                 .as_str()
                 .unwrap_or("")
                 .to_owned(),
-            redis_url: get_cfg(&docs, "redis_url")
+            redis_host: get_cfg(&docs, "redis_host")
                 .as_str()
-                .unwrap_or("")
+                .unwrap_or("127.0.0.1")
                 .to_owned(),
+            redis_port: get_cfg(&docs, "redis_port")
+                .as_i64().unwrap_or(6379) as u16,
+            redis_username: None,
             redis_password: get_cfg(&docs, "redis_password")
                 .to_owned()
                 .into_string(),
+            redis_db: get_cfg(&docs, "redis_db")
+                .as_i64().unwrap_or(0),
             database_url: get_cfg(&docs, "database_url")
                 .as_str()
                 .unwrap_or("")
@@ -107,10 +113,6 @@ impl Default for ApplicationConfig {
             white_list_api: to_vec_string(
                 get_cfg(&docs, "white_list_api").as_vec().unwrap().to_vec(),
             ),
-            cache_type: get_cfg(&docs, "cache_type")
-                .as_str()
-                .unwrap_or("")
-                .to_owned(),
             login_fail_retry: get_cfg(&docs, "login_fail_retry")
                 .as_i64()
                 .unwrap_or(0)

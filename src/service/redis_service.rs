@@ -1,23 +1,31 @@
 use std::time::Duration;
 
+use async_trait::async_trait;
 use log::error;
+use redis::{ConnectionAddr, ConnectionInfo, RedisConnectionInfo, RedisResult};
 use redis::aio::Connection;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::mix::error::{Error, Result};
 use crate::service::cache_service::ICacheService;
-use async_trait::async_trait;
-use redis::RedisResult;
+
 ///Redis缓存服务
 pub struct RedisService {
     pub client: redis::Client,
 }
 
 impl RedisService {
-    pub fn new(url: &str) -> Self {
+    pub fn new(host: String, port: u16, db: i64, username: Option<String>, password: Option<String>) -> Self {
         println!("[abs_admin] conncect redis...");
-        let client = redis::Client::open(url).unwrap();
+        let client = redis::Client::open(ConnectionInfo {
+            addr: ConnectionAddr::Tcp(host, port),
+            redis: RedisConnectionInfo {
+                db,
+                username,
+                password,
+            },
+        }).unwrap();
         println!("[abs_admin] conncect redis success!");
         Self { client }
     }

@@ -1,9 +1,11 @@
 use std::borrow::Borrow;
 
 use rbatis::crud::CRUD;
+use rbatis::DateTimeNative;
 
 use crate::config::auth;
 use crate::domain::dto::user1::User1UpdateDto;
+use crate::domain::dto::user::UserUpdateDto;
 use crate::domain::entity::user::User;
 use crate::domain::vo::user::{LoginVo, UserVo};
 use crate::mix::error::Error;
@@ -55,6 +57,15 @@ impl UserService {
             None => Ok(None)
         }
     }
+
+    ///后台用户根据id查找
+    pub async fn update(&self, user_update_dto: UserUpdateDto, update_id: Option<i32>) -> Result<u64> {
+        let mut user_update_entity = user_update_dto.convert2entity();
+        user_update_entity.update_id = update_id;
+        user_update_entity.update_time = Some(DateTimeNative::now());
+        Ok(CONTEXT.rbatis.update_by_column("id", &user_update_entity).await?)
+    }
+
 
     /// 内部查询使用entity，到rest层再转为Vo
     pub async fn do_find_by_name(&self, name: &String) -> Result<Option<User>> {

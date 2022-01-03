@@ -1,26 +1,26 @@
-use poem::{Endpoint, Error, Middleware, Request};
+use log::{Level, log};
+use poem::{Endpoint, Error, FromRequest, Middleware, Request, RequestBody};
 use poem::http::header::ToStrError;
 use poem::http::StatusCode;
 use poem::web::headers;
 use poem::web::headers::authorization::Basic;
 use poem::web::headers::HeaderMapExt;
-
+use poem_openapi::Object;
 use rand::{distributions::Alphanumeric, Rng, rngs::OsRng};
 
 use crate::domain::vo::user::LoginVo;
 use crate::service::CONTEXT;
-use poem_openapi::Object;
 
 const AUTHORIZATION_KEY: &'static str = "Authorization";
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
-struct Session {
+pub struct Session {
     pub id: Option<i32>,
     pub name: Option<String>,
 }
 
-struct HeaderAuth {
-    header_key: String,
+pub struct HeaderAuth {
+    pub header_key: String,
 }
 
 impl<E: Endpoint> Middleware<E> for HeaderAuth {
@@ -34,7 +34,7 @@ impl<E: Endpoint> Middleware<E> for HeaderAuth {
     }
 }
 
-struct HeaderAuthEndpoint<E> {
+pub struct HeaderAuthEndpoint<E> {
     ep: E,
     header_key: String,
 }
@@ -44,6 +44,13 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
     type Output = E::Output;
 
     async fn call(&self, mut req: Request) -> poem::Result<Self::Output> {
+        let uri = req.uri();
+        log!(Level::Info,"request uri:{}", uri);
+        if uri.eq("/api/user/login") {
+            //登录接口跳过健全
+            return self.ep.call(req).await;
+        }
+
         let auth = req.headers().get(&self.header_key);
         match auth {
             Some(auth) => {
@@ -66,6 +73,16 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
     }
 }
 
+#[async_trait::async_trait]
+impl<'a> FromRequest<'a> for &'a Session {
+    async fn from_request(req: &'a Request, _body: &mut RequestBody) -> poem::Result<Self> {
+        Ok(req
+            .extensions()
+            .get::<Session>()
+            .expect("To use the `Session` extractor, the `CookieSession` middleware is required."))
+    }
+}
+
 /// 获取唯一数
 fn get_unique_id() -> String {
     let value = std::iter::repeat(())
@@ -80,10 +97,11 @@ pub async fn get_session_id(login_vo: &LoginVo) -> String {
     let session_id = get_unique_id();
 
     //存储token
-    CONTEXT.cache_service.set_json::<Session>(&format!("{}:{}", AUTHORIZATION_KEY, session_id),
-                                              &Session {
-                                                  id: login_vo.id,
-                                                  name: login_vo.name.clone(),
-                                              }).await;
+    let set_result = CONTEXT.cache_service.set_json::<Session>(&format!("{}:{}", AUTHORIZATION_KEY, session_id),
+                                                               &Session {
+                                                                   id: login_vo.id,
+                                                                   name: login_vo.name.clone(),
+                                                               }).await;
+    log!(Level::Error, "set_result: {:?}", set_result);
     return session_id;
 }

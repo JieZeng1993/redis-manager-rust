@@ -5,10 +5,11 @@ use poem_openapi::{
     OpenApi, OpenApiService, param::Path, payload::Json, Tags,
 };
 
-use crate::domain::dto::user::UserLoginDto;
+use crate::config::auth::Session;
+use crate::domain::dto::user::{UserLoginDto, UserUpdateDto};
 use crate::domain::vo::RespVO;
+use crate::domain::vo::user::{LoginVo, UserVo};
 use crate::domain::vo::user1::User1Vo;
-use crate::domain::vo::user::LoginVo;
 use crate::service::CONTEXT;
 
 #[derive(Tags)]
@@ -24,7 +25,7 @@ pub struct UserRest;
 enum FindUserResponse {
     /// Return the specified user.
     #[oai(status = 200)]
-    Ok(Json<RespVO<User1Vo>>),
+    Ok(Json<RespVO<UserVo>>),
     /// Return when the specified user is not found.
     #[oai(status = 404)]
     NotFound,
@@ -65,18 +66,45 @@ impl UserRest {
         match user {
             Ok(user) => {
                 match user {
-                    Some(user)=>{
-                        LoginResponse::Ok(Json(RespVO::from( &user)))
+                    Some(user) => {
+                        LoginResponse::Ok(Json(RespVO::from(&user)))
                     }
-                    None=>{
+                    None => {
                         log::error!("user not found");
                         LoginResponse::NotFound
                     }
                 }
-            },
+            }
             Err(_) => {
                 log::error!("user find error");
                 LoginResponse::InnerError
+            }
+        }
+    }
+
+    #[oai(path = "/user/:user_id", method = "get", tag = "ApiTags::User")]
+    async fn find_user(&self, user_id: Path<i64>) -> FindUserResponse {
+        let user = CONTEXT.user_service.find_by_id(user_id.0).await;
+        match user {
+            Ok(user) => match user {
+                Some(user) => FindUserResponse::Ok(Json(RespVO::from(&user))),
+                None => FindUserResponse::NotFound,
+            },
+            Err(_) => {
+                log::error!("server started");
+                FindUserResponse::InnerError
+            }
+        }
+    }
+
+    #[oai(path = "/user", method = "put", tag = "ApiTags::User")]
+    async fn update_user(&self, user_update_dto: Json<UserUpdateDto>, session: &Session) -> UpdateUserResponse {
+        let user = CONTEXT.user_service.update(user_update_dto.0, session.id).await;
+        match user {
+            Ok(user) => UpdateUserResponse::Ok(Json(RespVO::from(&user))),
+            Err(_) => {
+                log::error!("update error");
+                UpdateUserResponse::InnerError
             }
         }
     }
