@@ -47,7 +47,7 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
         let uri = req.uri();
         log!(Level::Info,"request uri:{}", uri);
         if uri.eq("/api/user/login") {
-            //登录接口跳过健全
+            //登录接口跳过鉴权
             return self.ep.call(req).await;
         }
 
