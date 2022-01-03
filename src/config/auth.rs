@@ -7,13 +7,16 @@ use poem::web::headers::authorization::Basic;
 use poem::web::headers::HeaderMapExt;
 use poem_openapi::Object;
 use rand::{distributions::Alphanumeric, Rng, rngs::OsRng};
+use serde::{Deserialize, Serialize};
 
 use crate::domain::vo::user::LoginVo;
 use crate::service::CONTEXT;
 
 const AUTHORIZATION_KEY: &'static str = "Authorization";
 
-#[derive(Debug, Object, Clone, Eq, PartialEq)]
+#[derive(Debug, Object, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[oai(rename_all = "camelCase")]
 pub struct Session {
     pub id: Option<i32>,
     pub name: Option<String>,
@@ -50,7 +53,7 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
         if uri.eq("/api/user/login") || uri.eq("/favicon.ico") {
             //登录接口跳过鉴权
             return self.ep.call(req).await;
-        }else if uri.to_string().starts_with("/swagger_ui"){
+        } else if uri.to_string().starts_with("/swagger_ui") {
             return self.ep.call(req).await;
         }
 

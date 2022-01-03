@@ -3,7 +3,6 @@ use poem_openapi::payload::Payload;
 use poem_openapi::registry::MetaSchemaRef;
 use poem_openapi::types::{ParseFromJSON, ToJSON};
 use serde::{Deserialize, Serialize};
-use serde::de::DeserializeOwned;
 
 use crate::mix::error::Error;
 use crate::service::CONTEXT;
@@ -11,93 +10,110 @@ use crate::service::CONTEXT;
 pub mod user1;
 pub mod user;
 
-pub const CODE_SUCCESS: &str = "SUCCESS";
-pub const CODE_FAIL: &str = "FAIL";
+pub const CODE_COMMON_FAIL: &str = "COMMON_FAIL";
 
 /// http接口返回模型结构，提供基础的 code，msg，data 等json数据结构
-#[derive(Debug,Object, Clone, Eq, PartialEq)]
-#[oai(inline)]
+#[derive(Debug, Object, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[oai(inline, rename_all = "camelCase")]
 pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON {
-    pub code: Option<String>,
+    pub success: bool,
     pub msg: Option<String>,
     pub data: Option<T>,
+    pub error_code: Option<String>,
+    pub current: Option<u32>,
+    pub page_size: Option<u32>,
+    pub total: Option<u32>,
 }
 
-impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON  + ToJSON
+impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON
 {
     pub fn from_result(arg: &Result<T, Error>) -> Self {
         if arg.is_ok() {
             Self {
-                code: Some(CODE_SUCCESS.to_string()),
+                success: true,
                 msg: None,
+                error_code: None,
                 data: arg.clone().ok(),
+                current: None,
+                page_size: None,
+                total: None
             }
         } else {
             Self {
-                code: Some(CODE_FAIL.to_string()),
+                success: false,
                 msg: Some(arg.clone().err().unwrap().to_string()),
+                error_code: None,
                 data: None,
+                current: None,
+                page_size: None,
+                total: None
             }
         }
     }
 
     pub fn from(arg: &T) -> Self {
         Self {
-            code: Some(CODE_SUCCESS.to_string()),
+            success: true,
             msg: None,
+            error_code: None,
             data: Some(arg.clone()),
+            current: None,
+            page_size: None,
+            total: None
         }
     }
 
     pub fn no_data() -> Self {
         Self {
-            code: Some(CODE_SUCCESS.to_string()),
+            success: true,
             msg: None,
+            error_code: None,
             data: None,
+            current: None,
+            page_size: None,
+            total: None
         }
     }
 
     pub fn from_error(code: &str, arg: &Error) -> Self {
         let mut code_str = code.to_string();
         if code_str.is_empty() {
-            code_str = CODE_FAIL.to_string();
+            code_str = CODE_COMMON_FAIL.to_string();
         }
         Self {
-            code: Some(code_str),
+            success: true,
             msg: Some(arg.to_string()),
+            error_code: Some(code_str),
             data: None,
+            current: None,
+            page_size: None,
+            total: None
         }
     }
 
     pub fn from_error_info(code: &str, info: &str) -> Self {
         let mut code_str = code.to_string();
         if code_str.is_empty() {
-            code_str = CODE_FAIL.to_string();
+            code_str = CODE_COMMON_FAIL.to_string();
         }
         Self {
-            code: Some(code_str),
+            success: true,
             msg: Some(info.to_string()),
+            error_code: Some(code_str),
             data: None,
+            current: None,
+            page_size: None,
+            total: None
         }
     }
-
-    // pub fn resp_json(&self) -> Response {
-    //     if CONTEXT.config.debug {
-    //         println!("[abs_admin][debug] resp:{}", self.to_string());
-    //     }
-    //     return HttpResponse::Ok()
-    //         .set_header("Access-Control-Allow-Origin", "*")
-    //         .set_header("Cache-Control", "no-cache")
-    //         .set_header("Content-Type", "text/json;charset=UTF-8")
-    //         .body(self.to_string());
-    // }
 }
 
-// impl<T> ToString for RespVO<T>
-//     where
-//         T: Sync + Send + Clone + poem_openapi::types::Type
-// {
-//     fn to_string(&self) -> String {
-//         serde_json::to_string(self).unwrap()
-//     }
-// }
+#[test]
+fn test() {
+    let resp_vo = RespVO::from(&1);
+
+    let json = serde_json::to_string_pretty(&resp_vo).unwrap();
+
+    println!("{}", json);
+}
