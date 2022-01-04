@@ -10,6 +10,8 @@ use crate::domain::dto::user::{UserLoginDto, UserUpdateDto};
 use crate::domain::vo::RespVO;
 use crate::domain::vo::user::{LoginVo, UserVo};
 use crate::domain::vo::user1::User1Vo;
+use crate::mix::error::Error;
+use crate::mix::error::Result;
 use crate::service::CONTEXT;
 
 #[derive(Tags)]
@@ -83,18 +85,16 @@ impl UserRest {
     }
 
     #[oai(path = "/user/:user_id", method = "get", tag = "ApiTags::User")]
-    async fn find_user(&self, user_id: Path<i64>) -> FindUserResponse {
+    async fn find_user(&self, user_id: Path<i32>) -> FindUserResponse {
         let user = CONTEXT.user_service.find_by_id(user_id.0).await;
-        match user {
-            Ok(user) => match user {
-                Some(user) => FindUserResponse::Ok(Json(RespVO::from(&user))),
-                None => FindUserResponse::NotFound,
-            },
-            Err(_) => {
-                log::error!("server started");
-                FindUserResponse::InnerError
-            }
-        }
+        deal_find_user(user)
+    }
+
+    ///获取当前已登录的用户信息
+    #[oai(path = "/user/loginUser", method = "get", tag = "ApiTags::User")]
+    async fn login_user(&self, session: &Session) -> FindUserResponse {
+        let user = CONTEXT.user_service.find_by_id(session.id.unwrap()).await;
+        deal_find_user(user)
     }
 
     #[oai(path = "/user", method = "put", tag = "ApiTags::User")]
@@ -106,6 +106,19 @@ impl UserRest {
                 log::error!("update error");
                 UpdateUserResponse::InnerError
             }
+        }
+    }
+}
+
+fn deal_find_user(user: Result<Option<UserVo>>) -> FindUserResponse {
+    match user {
+        Ok(user) => match user {
+            Some(user) => FindUserResponse::Ok(Json(RespVO::from(&user))),
+            None => FindUserResponse::NotFound,
+        },
+        Err(_) => {
+            log::error!("server started");
+            FindUserResponse::InnerError
         }
     }
 }

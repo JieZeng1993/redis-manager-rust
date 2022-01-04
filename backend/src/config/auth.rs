@@ -108,6 +108,6 @@ pub async fn get_session_id(login_vo: &LoginVo) -> String {
                                                                    id: login_vo.id,
                                                                    name: login_vo.name.clone(),
                                                                }).await;
-    log!(Level::Error, "set_result: {:?}", set_result);
+    log!(Level::Info, "set_result: {:?}", set_result);
     return session_id;
 }

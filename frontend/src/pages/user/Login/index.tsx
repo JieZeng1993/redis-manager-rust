@@ -50,9 +50,9 @@ const Login: React.FC = () => {
         try {
             // 登录
             const loginResult = await loginNew({...values, type});
-            console.log(loginResult);
-            if (loginResult) {
-                localStorage.setItem("authorization", loginResult.data.authorization ? loginResult.data.authorization : "")
+            const loginData = loginResult.data || {};
+            if (loginResult && loginData) {
+                localStorage.setItem("authorization", loginData.authorization || "");
                 const defaultLoginSuccessMessage = intl.formatMessage({
                     id: 'pages.login.success',
                     defaultMessage: '登录成功！',
@@ -63,13 +63,14 @@ const Login: React.FC = () => {
                 if (!history) return;
                 const {query} = history.location;
                 const {redirect} = query as { redirect: string };
+                debugger
                 history.push(redirect || '/');
                 return;
             } else {
                 localStorage.removeItem("authorization");
             }
             // 如果失败去设置用户错误信息
-            setUserLoginState(loginResult);
+            setUserLoginState(loginData);
         } catch (error) {
             const defaultLoginFailureMessage = intl.formatMessage({
                 id: 'pages.login.failure',

@@ -15,9 +15,9 @@ export default {
 /**
  * 通用的返回结果
  */
-export interface Response {
+export interface Response<T = any>  {
     success: boolean; // if request is success
-    data?: any; // response data
+        data?: T; // response data
     errorCode?: string; // code for errorType
     msg?: string; // message display to user
     current?: number, //page request valid

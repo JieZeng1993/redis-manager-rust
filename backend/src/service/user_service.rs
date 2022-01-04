@@ -16,7 +16,7 @@ pub struct UserService {}
 
 impl UserService {
     ///后台用户根据id查找
-    pub async fn find_by_id(&self, id: i64) -> Result<Option<UserVo>> {
+    pub async fn find_by_id(&self, id: i32) -> Result<Option<UserVo>> {
         let user = self.do_find_by_id(id).await?;
         match user {
             Some(user) => Ok(Some(user.convert2vo())),
@@ -25,7 +25,7 @@ impl UserService {
     }
 
     /// 内部查询使用entity，到rest层再转为Vo
-    pub async fn do_find_by_id(&self, id: i64) -> Result<Option<User>> {
+    pub async fn do_find_by_id(&self, id: i32) -> Result<Option<User>> {
         let wrapper = CONTEXT.rbatis.new_wrapper().eq(User::id(), id);
         return Ok(CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
