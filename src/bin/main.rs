@@ -53,14 +53,14 @@ async fn main() -> Result<(), std::io::Error> {
         .init();
 
     let api = OpenApiService::new((User1Rest,UserRest), "api", "1.1")
-        .server("http://localhost:3000/api");
+        .server("http://localhost:3001/api");
     // let api_service =
     //     OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
     let swagger_ui = api.swagger_ui();
 
     // let tracer = init_tracer();
 
-    Server::new(TcpListener::bind("127.0.0.1:3000"))
+    Server::new(TcpListener::bind("127.0.0.1:3001"))
         .run(Route::new().nest("/api", api)
             .nest("/swagger_ui", swagger_ui)
                  .with( HeaderAuth{
