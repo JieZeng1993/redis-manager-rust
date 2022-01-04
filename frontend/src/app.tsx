@@ -28,7 +28,7 @@ export async function getInitialState(): Promise<{
     const fetchUserInfo = async () => {
         try {
             const msg = await queryCurrentUser();
-            return msg.data.data;
+            return msg.data;
         } catch (error) {
             history.push(loginPath);
         }
@@ -108,7 +108,7 @@ export const layout: RunTimeLayoutConfig = ({initialState, setInitialState}) => 
 export const request = {
     middlewares: [
         async function middlewareA(ctx: any, next: () => any) {
-            let authorization = localStorage.getItem("authorization");
+            const authorization = localStorage.getItem("authorization");
             if (authorization) {
                 const {req} = ctx;
                 const {options} = req;

@@ -1,6 +1,6 @@
 // @ts-ignore
 /* eslint-disable */
-import { request } from 'umi';
+import {request} from 'umi';
 import {Response} from "@/services/ant-design-pro/index";
 
 /**
@@ -21,9 +21,7 @@ export async function loginNew(body: USER_API.LoginParams, options?: { [key: str
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
-    return request<{
-        data: Response<USER_API.CurrentUser>;
-    }>('/api/user/loginUser', {
+    return request<Response<USER_API.CurrentUser>>('/api/user/loginUser', {
         method: 'GET',
         ...(options || {}),
     });
