@@ -17,7 +17,7 @@ pub struct User {
     pub update_id: Option<i32>,
 }
 
-impl_field_name_method!(User{id,name,password,create_time,create_id});
+impl_field_name_method!(User{id,name,password,create_time,create_id,update_time,update_id});
 
 impl User {
     pub fn convert2vo(self) -> UserVo {

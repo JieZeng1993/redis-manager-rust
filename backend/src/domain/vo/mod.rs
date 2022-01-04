@@ -9,6 +9,8 @@ use crate::service::CONTEXT;
 
 pub mod user1;
 pub mod user;
+pub mod redis_info;
+pub mod redis_node_info;
 
 pub const CODE_COMMON_FAIL: &str = "COMMON_FAIL";
 
@@ -37,7 +39,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
                 data: arg.clone().ok(),
                 current: None,
                 page_size: None,
-                total: None
+                total: None,
             }
         } else {
             Self {
@@ -47,7 +49,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
                 data: None,
                 current: None,
                 page_size: None,
-                total: None
+                total: None,
             }
         }
     }
@@ -60,7 +62,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             data: Some(arg.clone()),
             current: None,
             page_size: None,
-            total: None
+            total: None,
         }
     }
 
@@ -72,7 +74,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             data: None,
             current: None,
             page_size: None,
-            total: None
+            total: None,
         }
     }
 
@@ -88,7 +90,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             data: None,
             current: None,
             page_size: None,
-            total: None
+            total: None,
         }
     }
 
@@ -104,7 +106,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             data: None,
             current: None,
             page_size: None,
-            total: None
+            total: None,
         }
     }
 }
