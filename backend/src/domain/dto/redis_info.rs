@@ -10,12 +10,23 @@ use crate::domain::entity::redis_info::*;
 #[serde(rename_all = "camelCase")]
 #[oai(inline, rename_all = "camelCase")]
 pub struct RedisPageDto {
-    pub id: Option<i32>,
     pub current: u64,
     /// page有值表示分页查询
     pub page_size: Option<u64>,
-    pub keyword: Option<String>,
+    pub id: Option<i32>,
+    /// redis名称
+    pub name: Option<String>,
+    ///redis的主机地址，可以是域名，也可以是ip
+    pub host: Option<String>,
+    ///redis的端口
+    pub port: Option<u16>,
+    ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
     pub cluster_type: Option<String>,
+    ///更新时间范围-开始时间
+    pub update_time_begin: Option<String>,
+    ///更新时间范围-结束时间
+    pub update_time_end: Option<String>,
+    pub update_id: Option<i32>,
 }
 
 impl IPageRequest for RedisPageDto {

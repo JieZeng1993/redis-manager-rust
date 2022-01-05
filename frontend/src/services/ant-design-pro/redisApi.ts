@@ -7,6 +7,14 @@ import {Response} from "@/services/ant-design-pro/index";
 
 /** 登录接口 POST /api/redisInfo/page */
 export async function redisInfoPage(body: REDIS_API.RedisInfoPageDto, options?: { [key: string]: any }) {
+  if (body.updateTimeRange) {
+    // @ts-ignore
+    body.updateTimeBegin = body.updateTimeRange[0];
+    // @ts-ignore
+    body.updateTimeEnd = body.updateTimeRange[1];
+    // @ts-ignore
+    body.updateTimeRange = undefined;
+  }
   return request<Response<REDIS_API.RedisInfoVo[]>>('/api/redisInfo/page', {
     method: 'POST',
     headers: {

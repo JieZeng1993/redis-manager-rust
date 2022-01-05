@@ -39,15 +39,13 @@ impl RedisInfoService {
         let wrapper = CONTEXT
             .rbatis
             .new_wrapper()
-            .do_if(!redis_page_dto.keyword.is_empty(), |w|
-                w.like(RedisInfo::name(), &redis_page_dto.keyword)
-                    .or().like(RedisInfo::host(), &redis_page_dto.keyword)
-                    .or().like(RedisInfo::port(), &redis_page_dto.keyword)
-                    .or().like(RedisInfo::username(), &redis_page_dto.keyword))
-            .do_if(!redis_page_dto.cluster_type.is_empty(), |w|
-                w.like(RedisInfo::cluster_type(), &redis_page_dto.cluster_type))
-            .do_if(redis_page_dto.id.is_some(), |w|
-                w.like(RedisInfo::id(), &redis_page_dto.id))
+            .do_if(!redis_page_dto.name.is_empty(), |w| w.like(RedisInfo::name(), &redis_page_dto.name))
+            .do_if(!redis_page_dto.host.is_empty(), |w| w.like(RedisInfo::host(), &redis_page_dto.host))
+            .do_if(redis_page_dto.port.is_some(), |w| w.eq(RedisInfo::port(), &redis_page_dto.port))
+            .do_if(redis_page_dto.cluster_type.is_some(), |w| w.eq(RedisInfo::cluster_type(), &redis_page_dto.cluster_type))
+            .do_if(redis_page_dto.id.is_some(), |w| w.eq(RedisInfo::id(), &redis_page_dto.id))
+            .do_if(redis_page_dto.update_time_begin.is_some(), |w| w.ge(RedisInfo::update_time(), &redis_page_dto.update_time_begin))
+            .do_if(redis_page_dto.update_time_end.is_some(), |w| w.le(RedisInfo::update_time(), &redis_page_dto.update_time_end))
             .order_by(false, &[RedisInfo::update_time()]);
 
         let data = CONTEXT
