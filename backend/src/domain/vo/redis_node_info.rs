@@ -1,12 +1,13 @@
-use chrono::{DateTime, Local, LocalResult, TimeZone};
-
-use crate::util::time_util;
+use chrono::{DateTime, Local};
+use poem_openapi::Object;
+use serde::{Deserialize, Serialize};
 
 use super::super::vo::redis_info::*;
 
 ///redis节点信息响应实体
-#[crud_table]
-#[derive(Clone, Debug)]
+#[derive(Debug, Object, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[oai(inline, rename_all = "camelCase")]
 pub struct RedisNodeInfoVo {
     pub id: Option<i32>,
     ///redis_info表的主键
