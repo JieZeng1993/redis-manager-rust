@@ -3,19 +3,24 @@ use rbatis::rbatis::Rbatis;
 use cache_service::CacheService;
 
 pub use crate::config::app_config::ApplicationConfig;
+use crate::service::redis_info_service::RedisInfoService;
+use crate::service::redis_node_info_service::RedisNodeInfoService;
 
 pub mod cache_service;
-pub mod mem_service;
-pub mod redis_service;
 mod user1_service;
 pub mod user_service;
+pub mod cache_impl;
+pub mod redis_info_service;
+pub mod redis_node_info_service;
 
 pub struct ServiceContext {
     pub config: ApplicationConfig,
     pub rbatis: Rbatis,
     pub cache_service: CacheService,
     pub user1_service: user1_service::User1Service,
-    pub user_service: user_service::UserService
+    pub user_service: user_service::UserService,
+    pub redis_info_service: redis_info_service::RedisInfoService,
+    pub redis_node_info_service: redis_node_info_service::RedisNodeInfoService,
     //service
     // pub sys_res_service: SysResService,
     // pub sys_user_service: SysUserService,
@@ -28,7 +33,7 @@ pub struct ServiceContext {
 impl Default for ServiceContext {
     fn default() -> Self {
         let config = ApplicationConfig::default();
-        let rabits = tokio::task::block_in_place(||{
+        let rabits = tokio::task::block_in_place(|| {
             tokio::runtime::Handle::current().block_on(async {
                 crate::mapper::init_rbatis(&config).await
             })
@@ -37,15 +42,17 @@ impl Default for ServiceContext {
         ServiceContext {
             rbatis: rabits,
             cache_service: CacheService::new(&config),
-            user1_service: user1_service::User1Service{},
-            user_service: user_service::UserService{},
+            config,
+            user1_service: user1_service::User1Service {},
+            user_service: user_service::UserService {},
             // sys_res_service: SysResService {},
             // sys_user_service: SysUserService {},
             // sys_role_service: SysRoleService {},
             // sys_role_res_service: SysRoleResService {},
             // sys_user_role_service: SysUserRoleService {},
             // sys_dict_service: SysDictService {},
-            config,
+            redis_info_service: RedisInfoService {},
+            redis_node_info_service: RedisNodeInfoService {},
         }
     }
 }

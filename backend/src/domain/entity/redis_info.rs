@@ -42,6 +42,7 @@ impl RedisInfo {
             create_id: self.create_id,
             update_time,
             update_id: self.update_id,
+            redis_node_infos: None
         }
     }
 }

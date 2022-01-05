@@ -7,7 +7,8 @@ use serde::Serialize;
 
 use crate::config::app_config::ApplicationConfig;
 use crate::mix::error::Result;
-use crate::service::{mem_service::MemService, redis_service::RedisService};
+use crate::service::cache_impl::mem_service::MemService;
+use crate::service::cache_impl::redis_service::RedisService;
 
 #[async_trait]
 pub trait ICacheService: Sync + Send {

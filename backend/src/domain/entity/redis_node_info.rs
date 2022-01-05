@@ -36,25 +36,23 @@ pub struct RedisNodeInfo {
 
 impl_field_name_method!(RedisNodeInfo{id,redis_info_id,node_id,master_id,host,port,node_role,node_status,slot_from,slot_to,create_time,create_id,update_time,update_id});
 
-impl RedisNodeInfo {
-    pub fn convert2vo(self) -> RedisNodeInfoVo {
-        let create_time = time_util::convert(self.create_time);
-        let update_time = time_util::convert(self.update_time);
-        RedisNodeInfoVo {
-            id: self.id,
-            redis_info_id: self.redis_info_id,
-            node_id: self.node_id,
-            master_id: self.master_id,
-            host: self.host,
-            port: self.port,
-            node_role: self.node_role,
-            node_status: self.node_status,
-            slot_from: self.slot_from,
-            slot_to: self.slot_to,
-            create_time,
-            create_id: self.create_id,
-            update_time,
-            update_id: self.update_id,
-        }
+pub fn convert_redis_info2redis_info_vo(redis_node_info: RedisNodeInfo) -> RedisNodeInfoVo {
+    let create_time = time_util::convert(redis_node_info.create_time);
+    let update_time = time_util::convert(redis_node_info.update_time);
+    RedisNodeInfoVo {
+        id: redis_node_info.id,
+        redis_info_id: redis_node_info.redis_info_id,
+        node_id: redis_node_info.node_id,
+        master_id: redis_node_info.master_id,
+        host: redis_node_info.host,
+        port: redis_node_info.port,
+        node_role: redis_node_info.node_role,
+        node_status: redis_node_info.node_status,
+        slot_from: redis_node_info.slot_from,
+        slot_to: redis_node_info.slot_to,
+        create_time,
+        create_id: redis_node_info.create_id,
+        update_time,
+        update_id: redis_node_info.update_id,
     }
 }

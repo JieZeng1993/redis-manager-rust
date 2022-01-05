@@ -63,7 +63,6 @@ const Login: React.FC = () => {
                 if (!history) return;
                 const {query} = history.location;
                 const {redirect} = query as { redirect: string };
-                debugger
                 history.push(redirect || '/');
                 return;
             } else {

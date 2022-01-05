@@ -2,6 +2,8 @@ use chrono::{DateTime, Local};
 use poem_openapi::Object;
 use serde::{Deserialize, Serialize};
 
+use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
+
 ///redis信息主表的响应实体
 #[derive(Debug, Object, Clone, Eq, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,4 +22,5 @@ pub struct RedisInfoVo {
     pub create_id: Option<i32>,
     pub update_time: Option<DateTime<Local>>,
     pub update_id: Option<i32>,
+    pub redis_node_infos: Option<Vec<RedisNodeInfoVo>>,
 }

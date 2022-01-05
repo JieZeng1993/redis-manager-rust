@@ -9,7 +9,7 @@
           {
             name: 'login',
             path: '/user/login',
-            component: './user/Login',
+            component: './User/Login',
           },
         ],
       },
@@ -39,6 +39,21 @@
       },
       {
         component: './404',
+      },
+    ],
+  },
+  {
+    path: '/redisManage',
+    name: 'redisManage',
+    icon: 'crown',
+    //权限控制
+    // access: 'canAdmin',
+    routes: [
+      {
+        path: '/redisManage/redisInfo',
+        name: 'redisInfo',
+        icon: 'smile',
+        component: './RedisManage/RedisInfo',
       },
     ],
   },
