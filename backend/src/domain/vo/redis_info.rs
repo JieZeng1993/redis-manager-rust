@@ -10,6 +10,8 @@ use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 #[oai(inline, rename_all = "camelCase")]
 pub struct RedisInfoVo {
     pub id: Option<i32>,
+    /// redis名称
+    pub name: Option<String>,
     ///redis的主机地址，可以是域名，也可以是ip
     pub host: Option<String>,
     ///redis的端口

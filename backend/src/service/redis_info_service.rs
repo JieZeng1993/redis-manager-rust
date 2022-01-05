@@ -2,15 +2,20 @@ use std::borrow::Borrow;
 
 use rbatis::crud::CRUD;
 use rbatis::DateTimeNative;
+use rbatis::plugin::page::{Page, PageRequest};
 
 use crate::config::auth;
+use crate::domain::dto::{convert_rbatis_page_request, convert_rbatis_page_resp_and_convert};
+use crate::domain::dto::redis_info::RedisPageDto;
 use crate::domain::dto::user1::User1UpdateDto;
 use crate::domain::dto::user::UserUpdateDto;
-use crate::domain::entity::redis_info::RedisInfo;
+use crate::domain::entity::redis_info::*;
 use crate::domain::vo::redis_info::*;
+use crate::domain::vo::RespVO;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
 use crate::service::CONTEXT;
+use crate::util::string::IsEmpty;
 
 pub struct RedisInfoService {}
 
@@ -20,13 +25,37 @@ impl RedisInfoService {
         let redis_info = self.do_find_by_id(id).await?;
         match redis_info {
             Some(redis_info) => {
-                let mut redis_info_vo = redis_info.convert2vo();
+                let mut redis_info_vo = convert_redis_info2redis_info_vo(redis_info);
                 let redis_node_info_vos = CONTEXT.redis_node_info_service.find_by_redis_info_id(redis_info_vo.id.unwrap()).await?;
                 redis_info_vo.redis_node_infos = Some(redis_node_info_vos);
                 Ok(Some(redis_info_vo))
             }
             None => Ok(None)
         }
+    }
+
+    ///redis info分页
+    pub async fn page(&self, redis_page_dto: RedisPageDto) -> Result<RespVO<Vec<RedisInfoVo>>> {
+        let wrapper = CONTEXT
+            .rbatis
+            .new_wrapper()
+            .do_if(!redis_page_dto.keyword.is_empty(), |w|
+                w.like(RedisInfo::name(), &redis_page_dto.keyword)
+                    .or().like(RedisInfo::host(), &redis_page_dto.keyword)
+                    .or().like(RedisInfo::port(), &redis_page_dto.keyword)
+                    .or().like(RedisInfo::username(), &redis_page_dto.keyword))
+            .do_if(!redis_page_dto.cluster_type.is_empty(), |w|
+                w.like(RedisInfo::cluster_type(), &redis_page_dto.cluster_type))
+            .do_if(redis_page_dto.id.is_some(), |w|
+                w.like(RedisInfo::id(), &redis_page_dto.id))
+            .order_by(false, &[RedisInfo::update_time()]);
+
+        let data = CONTEXT
+            .rbatis
+            .fetch_page_by_wrapper::<RedisInfo>(wrapper, &convert_rbatis_page_request(redis_page_dto))
+            .await?;
+
+        Ok(convert_rbatis_page_resp_and_convert(data, convert_redis_info2redis_info_vo))
     }
 
     /// 根据id查找entity

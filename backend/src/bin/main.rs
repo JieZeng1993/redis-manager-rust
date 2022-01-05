@@ -29,6 +29,7 @@ use redis_manager_rust::config::auth::HeaderAuth;
 use redis_manager_rust::config::log as rabit_log;
 use redis_manager_rust::rest::user1_rest::User1Rest;
 use redis_manager_rust::rest::user_rest::UserRest;
+use redis_manager_rust::rest::redis_info_rest::RedisInfoRest;
 
 // fn init_tracer() -> Tracer {
 //     global::set_text_map_propagator(TraceContextPropagator::new());
@@ -52,7 +53,7 @@ async fn main() -> Result<(), std::io::Error> {
         .with_max_level(tracing::Level::TRACE)
         .init();
 
-    let api = OpenApiService::new((User1Rest,UserRest), "api", "1.1")
+    let api = OpenApiService::new((User1Rest,UserRest,RedisInfoRest), "api", "1.1")
         .server("http://localhost:3001/api");
     // let api_service =
     //     OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");

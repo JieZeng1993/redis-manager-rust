@@ -84,9 +84,9 @@ impl UserRest {
         }
     }
 
-    #[oai(path = "/user/:user_id", method = "get", tag = "ApiTags::User")]
-    async fn find_user(&self, user_id: Path<i32>) -> FindUserResponse {
-        let user = CONTEXT.user_service.find_by_id(user_id.0).await;
+    #[oai(path = "/user/:id", method = "get", tag = "ApiTags::User")]
+    async fn find_user(&self, id: Path<i32>) -> FindUserResponse {
+        let user = CONTEXT.user_service.find_by_id(id.0).await;
         deal_find_user(user)
     }
 

@@ -23,9 +23,9 @@ pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + 
     pub msg: Option<String>,
     pub data: Option<T>,
     pub error_code: Option<String>,
-    pub current: Option<u32>,
-    pub page_size: Option<u32>,
-    pub total: Option<u32>,
+    pub current: Option<u64>,
+    pub page_size: Option<u64>,
+    pub total: Option<u64>,
 }
 
 impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON
