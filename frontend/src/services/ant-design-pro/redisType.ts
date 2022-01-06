@@ -26,6 +26,21 @@ declare namespace REDIS_API {
     updateTimeEnd: String,
   };
 
+  //实时查询节点相关信息请求
+  type RedisInfoRelatedInfoRtDto = {
+    id?: number;
+    //name校验重复（校验时，如果）
+    name?: string;
+    ///redis的主机地址，可以是域名，也可以是ip
+    host?: string;
+    ///redis的端口
+    port?: number;
+    ///用户名（空表示无需用户名）
+    username?: string;
+    ///密码（空表示无密码）
+    password?: string;
+  };
+
   type RedisInfoVo = {
     id?: number;
     name?: string;
@@ -33,8 +48,8 @@ declare namespace REDIS_API {
     host?: string;
     ///redis的端口
     port?: number;
-    username?:string,
-    password?:string,
+    username?: string;
+    password?: string;
     ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
     clusterType?: string;
     createTime?: string;
@@ -51,8 +66,8 @@ declare namespace REDIS_API {
     host?: string;
     ///redis的端口
     port?: number;
-    username?:string,
-    password?:string,
+    username?: string,
+    password?: string,
     ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
     clusterType?: string;
     createTime?: string;

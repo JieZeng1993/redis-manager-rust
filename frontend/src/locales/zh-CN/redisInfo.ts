@@ -1,7 +1,9 @@
 export default {
   "redisManage.redisInfo.searchTable.title": "redis信息列表",
   "redisManage.redisInfo.redisInfoVo.name": "名称",
-  "redisManage.redisInfo.redisInfoVo.host": "host",
+  "redisManage.redisInfo.redisInfoVo.tip.name": "redis信息名称唯一",
+  "redisManage.redisInfo.redisInfoVo.host": "主机",
+  "redisManage.redisInfo.redisInfoVo.tip.host": "IP或主机",
   "redisManage.redisInfo.redisInfoVo.port": "端口",
   "redisManage.redisInfo.redisInfoVo.username": "用户名",
   "redisManage.redisInfo.redisInfoVo.password": "密码",

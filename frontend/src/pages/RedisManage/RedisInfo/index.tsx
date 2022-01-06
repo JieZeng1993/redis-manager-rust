@@ -23,7 +23,8 @@ const RedisInfo: React.FC = () => {
 
     const [currentRow, setCurrentRow] = useState<REDIS_API.RedisInfoVo>();
 
-    const redisInfoPageColumns: ProColumns<REDIS_API.RedisInfoVo>[] = [
+
+  const redisInfoPageColumns: ProColumns<REDIS_API.RedisInfoVo>[] = [
       {
         title: (
           <FormattedMessage
@@ -32,7 +33,13 @@ const RedisInfo: React.FC = () => {
           />
         ),
         dataIndex: 'name',
-        tip: 'redis信息名称唯一',
+        // @ts-ignore
+        tip: (
+          <FormattedMessage
+            id="redisManage.redisInfo.redisInfoVo.tip.name"
+            defaultMessage="redis info name unique"
+          />
+        ),
         render: (dom, entity) => {
           return (
             <a
@@ -54,7 +61,13 @@ const RedisInfo: React.FC = () => {
           />
         ),
         dataIndex: 'host',
-        tip: 'ip或主机名',
+        // @ts-ignore
+        tip: (
+          <FormattedMessage
+            id="redisManage.redisInfo.redisInfoVo.tip.host"
+            defaultMessage="ip or host"
+          />
+        ),
         valueType: 'textarea',
       },
       {
