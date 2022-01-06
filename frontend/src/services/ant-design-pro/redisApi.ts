@@ -25,6 +25,14 @@ export async function redisInfoPage(body: REDIS_API.RedisInfoPageDto, options?: 
   });
 }
 
+
+/** 登录接口 POST /api/redisInfo/:id */
+export async function redisInfoFindById(id: number) {
+  return request<Response<REDIS_API.RedisInfoVo>>(`/api/redisInfo/${id}`, {
+    method: 'GET',
+  });
+}
+
 // /** 获取当前的用户 GET /api/currentUser */
 // export async function currentUser(options?: { [key: string]: any }) {
 //   return request<Response<USER_API.CurrentUser>>('/api/user/loginUser', {
@@ -32,3 +40,22 @@ export async function redisInfoPage(body: REDIS_API.RedisInfoPageDto, options?: 
 //     ...(options || {}),
 //   });
 // }
+
+export function getDefaultRedisInfoVo(){
+  return {
+    id: -5,
+    name: "",
+    ///redis的主机地址，可以是域名，也可以是ip
+    host: "",
+    ///redis的端口
+    port: 6379,
+    username:"",
+    password:"",
+    ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
+    clusterType: "",
+    createTime: "",
+    createId: -5,
+    updateTime: "",
+    updateId: -5,
+  };
+}

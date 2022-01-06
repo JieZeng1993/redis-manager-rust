@@ -22,6 +22,7 @@ export default {
   'edit': '编辑',
   'new': '新建',
   'add': '添加',
+  "rule.pleaseFill": "请填写",
   "rule.pleaseInput": "请输入",
   "rule.pleaseSelect": "请选择",
   ...pages,

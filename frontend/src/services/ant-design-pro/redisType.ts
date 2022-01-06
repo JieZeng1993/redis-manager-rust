@@ -33,33 +33,31 @@ declare namespace REDIS_API {
     host?: string;
     ///redis的端口
     port?: number;
+    username?:string,
+    password?:string,
     ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
-    cluster_type?: string;
+    clusterType?: string;
+    createTime?: string;
+    createId?: number;
+    updateTime?: string;
+    updateId?: number;
+    // redisNodeInfos: RedisNodeInfoVo[],
+  }
+
+  type RedisNodeInfoVo = {
+    id?: number;
+    name?: string;
+    ///redis的主机地址，可以是域名，也可以是ip
+    host?: string;
+    ///redis的端口
+    port?: number;
+    username?:string,
+    password?:string,
+    ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
+    clusterType?: string;
     createTime?: string;
     createId?: number;
     updateTime?: number;
     updateId?: number;
-    // redis_node_infos: Option<Vec<RedisNodeInfoVo>>,
   }
-  //
-  // type CurrentUser = {
-  //   id?: number;
-  //   name?: string;
-  //   avatar?: string;
-  //   email?: string;
-  //   signature?: string;
-  //   title?: string;
-  //   group?: string;
-  //   tags?: { key?: string; label?: string }[];
-  //   notifyCount?: number;
-  //   unreadCount?: number;
-  //   country?: string;
-  //   access?: string;
-  //   geographic?: {
-  //     province?: { label?: string; key?: string };
-  //     city?: { label?: string; key?: string };
-  //   };
-  //   address?: string;
-  //   phone?: string;
-  // };
 }

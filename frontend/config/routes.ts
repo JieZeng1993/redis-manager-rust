@@ -1,6 +1,7 @@
 ﻿export default [
   {
     path: '/user',
+    //表示隐藏菜单、导航，footer，可以手动配置
     layout: false,
     routes: [
       {
@@ -59,7 +60,6 @@
         path: '/redisManage/redisInfo/update/:id',
         // name: 'redisInfoUpdate',
         icon: 'smile',
-        layout: false,
         component: './RedisManage/RedisInfo/update',
       },
     ],

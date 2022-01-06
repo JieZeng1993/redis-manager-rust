@@ -138,7 +138,7 @@ const RedisInfo: React.FC = () => {
         valueType: 'textarea',
       },
       {
-        title: <FormattedMessage id="operate" defaultMessage="操作"/>,
+        title: <FormattedMessage id="operate" defaultMessage="operate"/>,
         valueType: 'option',
         render: (_, record) => [
           <a

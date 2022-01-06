@@ -1,36 +1,47 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import type {FormInstance} from 'antd';
-import {Alert, Button, Card, Descriptions, Divider, Result, Statistic} from 'antd';
+import {Alert, Button, Card, Descriptions, Divider, Result} from 'antd';
 import {PageContainer} from '@ant-design/pro-layout';
 import ProForm, {ProFormDigit, ProFormSelect, ProFormText, StepsForm} from '@ant-design/pro-form';
-// import styles from './style.less';
-import {useParams} from 'umi';
+import styles from './style.less';
+import {useIntl, useParams} from 'umi';
+import {getDefaultRedisInfoVo, redisInfoFindById} from "@/services/ant-design-pro/redisApi";
+
 
 const StepDescriptions: React.FC<{
   stepData: REDIS_API.RedisInfoVo;
   bordered?: boolean;
 }> = ({stepData, bordered}) => {
-  const {payAccount, receiverAccount, receiverName, amount} = stepData;
+  //国际化
+  const intl = useIntl();
+
+  const {name, host, port, username, password, clusterType} = stepData?stepData:getDefaultRedisInfoVo();
   return (
     <Descriptions column={1} bordered={bordered}>
-      <Descriptions.Item label="付款账户"> {payAccount}</Descriptions.Item>
-      <Descriptions.Item label="收款账户"> {receiverAccount}</Descriptions.Item>
-      <Descriptions.Item label="收款人姓名"> {receiverName}</Descriptions.Item>
-      <Descriptions.Item label="转账金额">
-        <Statistic
-          value={amount}
-          suffix={
-            <span
-              style={{
-                fontSize: 14,
-              }}
-            >
-              元
-            </span>
-          }
-          precision={2}
-        />
-      </Descriptions.Item>
+      <Descriptions.Item label={intl.formatMessage({
+        id: 'redisManage.redisInfo.redisInfoVo.name',
+        defaultMessage: 'name',
+      })}> {name}</Descriptions.Item>
+      <Descriptions.Item label={intl.formatMessage({
+        id: 'redisManage.redisInfo.redisInfoVo.host',
+        defaultMessage: 'host',
+      })}> {host}</Descriptions.Item>
+      <Descriptions.Item label={intl.formatMessage({
+        id: 'redisManage.redisInfo.redisInfoVo.port',
+        defaultMessage: 'port',
+      })}> {port}</Descriptions.Item>
+      <Descriptions.Item label={intl.formatMessage({
+        id: 'redisManage.redisInfo.redisInfoVo.username',
+        defaultMessage: 'username',
+      })}> {username}</Descriptions.Item>
+      <Descriptions.Item label={intl.formatMessage({
+        id: 'redisManage.redisInfo.redisInfoVo.password',
+        defaultMessage: 'password',
+      })}> {password}</Descriptions.Item>
+      <Descriptions.Item label={intl.formatMessage({
+        id: 'redisManage.redisInfo.redisInfoVo.clusterType',
+        defaultMessage: 'clusterType',
+      })}> {clusterType}</Descriptions.Item>
     </Descriptions>
   );
 };
@@ -51,7 +62,7 @@ const StepResult: React.FC<{
           <Button>查看账单</Button>
         </>
       }
-      // className={styles.result}
+      className={styles.result}
     >
       {props.children}
     </Result>
@@ -61,22 +72,35 @@ const StepResult: React.FC<{
 const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   // @ts-ignore
   const {id} = useParams();
-  if (id) {
-    console.log("redis info id:" + id);
-  }
 
-  const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>({
-    payAccount: 'ant-design@alipay.com',
-    receiverAccount: 'test@example.com',
-    receiverName: 'Alex',
-    amount: '500',
-    receiverMode: 'alipay',
-  });
+  const defaultVal = getDefaultRedisInfoVo();
+  const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
+  useEffect(()=>{
+    redisInfoFindById(id).then((result) => {
+      const data = result?.data;
+      setStepData(data )
+    }).catch(() => {
+      setStepData(undefined)
+    })
+  },[]);
+
+  console.log("RedisInfoUpdate INIT ");
   const [current, setCurrent] = useState(0);
   const formRef = useRef<FormInstance>();
-
+  //国际化
+  const intl = useIntl();
   return (
-    <PageContainer content="将一个冗长或用户不熟悉的表单任务分成多个步骤，指导用户完成。">
+    <PageContainer title={intl.formatMessage({
+      id: 'redisManage.redisInfo.modify.title',
+      defaultMessage: 'name',
+    }) +
+    (id ? intl.formatMessage({
+        id: 'edit',
+      }) :
+      intl.formatMessage({
+        id: 'add',
+      }))
+    }>
       <Card bordered={false}>
         <StepsForm
           current={current}
@@ -92,7 +116,13 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
         >
           <StepsForm.StepForm<REDIS_API.RedisInfoVo>
             formRef={formRef}
-            title="填写转账信息"
+            title={intl.formatMessage({
+              id: 'rule.pleaseFill',
+              defaultMessage: 'please fill',
+            }) + intl.formatMessage({
+              id: 'redisManage.redisInfo.modify.title',
+              defaultMessage: 'redis info',
+            })}
             initialValues={stepData}
             onFinish={async (values) => {
               setStepData(values);
@@ -128,11 +158,28 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
               />
             </ProForm.Group>
             <ProFormText
-              label="收款人姓名"
+              label={intl.formatMessage({
+                id: 'redisManage.redisInfo.redisInfoVo.name',
+                defaultMessage: 'name',
+              })}
               width="md"
-              name="receiverName"
-              rules={[{required: true, message: '请输入收款人姓名'}]}
-              placeholder="请输入收款人姓名"
+              name="name"
+              rules={[{
+                required: true, message: intl.formatMessage({
+                  id: 'rule.pleaseInput',
+                  defaultMessage: 'please input',
+                }) + intl.formatMessage({
+                  id: 'redisManage.redisInfo.redisInfoVo.name',
+                  defaultMessage: 'name',
+                })
+              }]}
+              placeholder={intl.formatMessage({
+                id: 'rule.pleaseInput',
+                defaultMessage: 'please input',
+              }) + intl.formatMessage({
+                id: 'redisManage.redisInfo.redisInfoVo.name',
+                defaultMessage: 'name',
+              })}
             />
             <ProFormDigit
               label="转账金额"
@@ -153,19 +200,15 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           </StepsForm.StepForm>
 
           <StepsForm.StepForm title="确认转账信息">
-            <div
-              // className={styles.result}
-            >
+            <div className={styles.result}>
               <Alert
                 closable
                 showIcon
                 message="确认转账后，资金将直接打入对方账户，无法退回。"
                 style={{marginBottom: 24}}
               />
-              <StepDescriptions stepData={stepData} bordered/>
-              <Divider
-                // style={{margin: '24px 0'}}
-              />
+              <StepDescriptions stepData={stepData ? stepData : {}} bordered/>
+              <Divider style={{margin: '24px 0'}}/>
               <ProFormText.Password
                 label="支付密码"
                 width="md"
@@ -187,9 +230,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           </StepsForm.StepForm>
         </StepsForm>
         <Divider style={{margin: '40px 0 24px'}}/>
-        <div
-          // className={styles.desc}
-        >
+        <div className={styles.desc}>
           <h3>说明</h3>
           <h4>转账到支付宝账户</h4>
           <p>
