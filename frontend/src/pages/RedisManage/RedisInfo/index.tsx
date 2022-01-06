@@ -1,6 +1,7 @@
 import React from "react";
 import {PageContainer} from "@ant-design/pro-layout";
-import ProTable, {ProColumns} from '@ant-design/pro-table';
+import type {ProColumns} from '@ant-design/pro-table';
+import ProTable from '@ant-design/pro-table';
 import {FormattedMessage, useIntl} from "@@/plugin-locale/localeExports";
 import {Button} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
