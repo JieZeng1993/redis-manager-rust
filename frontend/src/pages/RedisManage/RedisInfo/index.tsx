@@ -1,14 +1,28 @@
-import React from "react";
+import React, {useRef, useState} from "react";
 import {PageContainer} from "@ant-design/pro-layout";
-import type {ProColumns} from '@ant-design/pro-table';
+import type {ActionType, ProColumns} from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import {FormattedMessage, useIntl} from "@@/plugin-locale/localeExports";
-import {Button} from "antd";
+import {Button, Drawer} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
 import {redisInfoPage} from "@/services/ant-design-pro/redisApi";
-import moment from 'moment';
+import type {ProDescriptionsItemProps} from "@ant-design/pro-descriptions";
+import ProDescriptions from "@ant-design/pro-descriptions";
+import UpdateForm from "./components/UpdateForm";
+import {FormattedMessage, history, SelectLang, useIntl, useModel} from 'umi';
 
 const RedisInfo: React.FC = () => {
+
+    //详情展示
+    const [showDetail, setShowDetail] = useState<boolean>(false);
+
+    //修改展示
+    const [updateModalVisible, handleUpdateModalVisible] = useState<boolean>(false);
+
+    //修改刷新触发
+    const actionRef = useRef<ActionType>();
+
+    const [currentRow, setCurrentRow] = useState<REDIS_API.RedisInfoVo>();
+
     const redisInfoPageColumns: ProColumns<REDIS_API.RedisInfoVo>[] = [
       {
         title: (
@@ -23,8 +37,8 @@ const RedisInfo: React.FC = () => {
           return (
             <a
               onClick={() => {
-                // setCurrentRow(entity);
-                // setShowDetail(true);
+                setCurrentRow(entity);
+                setShowDetail(true);
               }}
             >
               {dom}
@@ -84,11 +98,18 @@ const RedisInfo: React.FC = () => {
         },
       },
       {
-        title: '日期范围',
+        title: (
+          <FormattedMessage
+            id="redisManage.redisInfo.redisInfoVo.updateTimeRange"
+            defaultMessage="更新时间范围"
+          />
+        ),
         dataIndex: 'updateTimeRange',
         valueType: 'dateRange',
         hideInTable: true,
-        initialValue: [moment(), moment().add(1, 'day')],
+        //详情的时候不展示
+        hideInDescriptions: true,
+        // initialValue: [moment(), moment().add(1, 'day')],
       },
       {
         title: (
@@ -111,6 +132,8 @@ const RedisInfo: React.FC = () => {
         ),
         hideInSearch: true,
         hideInTable: true,
+        //详情的时候不展示
+        hideInDescriptions: true,
         dataIndex: 'updateId',
         valueType: 'textarea',
       },
@@ -118,15 +141,16 @@ const RedisInfo: React.FC = () => {
         title: <FormattedMessage id="operate" defaultMessage="操作"/>,
         valueType: 'option',
         render: (_, record) => [
-          // <a
-          //   key="config"
-          //   onClick={() => {
-          //     // handleUpdateModalVisible(true);
-          //     // setCurrentRow(record);
-          //   }}
-          // >
-          //   <FormattedMessage id="pages.searchTable.config" defaultMessage="Configuration" />
-          // </a>,
+          <a
+            key="config"
+            onClick={() => {
+              // handleUpdateModalVisible(true);
+              // setCurrentRow(record);
+              history.push(`/redisManage/redisInfo/update/${record.id}`)
+            }}
+          >
+            <FormattedMessage id="modify" defaultMessage="修改"/>
+          </a>,
           // <a key="subscribeAlert" href="https://procomponents.ant.design/">
           //   <FormattedMessage
           //     id="pages.searchTable.subscribeAlert"
@@ -145,6 +169,7 @@ const RedisInfo: React.FC = () => {
             id: 'redisManage.redisInfo.searchTable.title',
             defaultMessage: 'redis信息列表',
           })}
+          actionRef={actionRef}
           rowKey="id"
           search={{
             labelWidth: 120,
@@ -157,12 +182,58 @@ const RedisInfo: React.FC = () => {
                 // handleModalVisible(true);
               }}
             >
-              <PlusOutlined/> <FormattedMessage id="redisManage.redisInfo.new" defaultMessage="New"/>
+              <PlusOutlined/> <FormattedMessage id="new" defaultMessage="New"/>
             </Button>,
           ]}
           request={redisInfoPage}
           columns={redisInfoPageColumns}
         />
+
+        <UpdateForm
+          onSubmit={async (value) => {
+            // const success = await handleUpdate(value);
+            const success = true;
+            if (success) {
+              handleUpdateModalVisible(false);
+              setCurrentRow(undefined);
+              if (actionRef.current) {
+                actionRef.current.reload();
+              }
+            }
+          }}
+          onCancel={() => {
+            handleUpdateModalVisible(false);
+            if (!showDetail) {
+              setCurrentRow(undefined);
+            }
+          }}
+          visible={updateModalVisible}
+          current={currentRow || {}}
+          done={false}/>
+
+        <Drawer
+          width={600}
+          visible={showDetail}
+          onClose={() => {
+            setCurrentRow(undefined);
+            setShowDetail(false);
+          }}
+          closable={false}
+        >
+          {currentRow?.name && (
+            <ProDescriptions<API.RuleListItem>
+              column={2}
+              title={currentRow?.name}
+              request={async () => ({
+                data: currentRow || {},
+              })}
+              params={{
+                id: currentRow?.name,
+              }}
+              columns={redisInfoPageColumns as ProDescriptionsItemProps<REDIS_API.RedisInfoVo>[]}
+            />
+          )}
+        </Drawer>
       </PageContainer>
     )
       ;

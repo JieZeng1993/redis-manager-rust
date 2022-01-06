@@ -55,6 +55,13 @@
         icon: 'smile',
         component: './RedisManage/RedisInfo',
       },
+      {
+        path: '/redisManage/redisInfo/update/:id',
+        // name: 'redisInfoUpdate',
+        icon: 'smile',
+        layout: false,
+        component: './RedisManage/RedisInfo/update',
+      },
     ],
   },
   {

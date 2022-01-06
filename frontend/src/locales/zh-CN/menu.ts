@@ -51,4 +51,5 @@ export default {
   'menu.editor.koni': '拓扑编辑器',
   'menu.redisManage': 'redis管理',
   'menu.redisManage.redisInfo': 'redis信息',
+  'menu.redisManage.redisInfoUpdate': 'redis信息更新',
 };
