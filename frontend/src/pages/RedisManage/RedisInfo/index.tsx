@@ -8,7 +8,6 @@ import {redisInfoPage} from "@/services/ant-design-pro/redisApi";
 import moment from 'moment';
 
 const RedisInfo: React.FC = () => {
-    // @ts-ignore
     const redisInfoPageColumns: ProColumns<REDIS_API.RedisInfoVo>[] = [
       {
         title: (
