@@ -39,6 +39,8 @@ declare namespace REDIS_API {
     username?: string;
     ///密码（空表示无密码）
     password?: string;
+    ///是否请求,目前前端不会。。。。
+    request?: boolean;
   };
 
   type RedisInfoVo = {

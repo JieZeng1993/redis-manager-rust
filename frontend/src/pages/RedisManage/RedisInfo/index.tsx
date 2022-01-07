@@ -8,7 +8,7 @@ import {redisInfoPage} from "@/services/ant-design-pro/redisApi";
 import type {ProDescriptionsItemProps} from "@ant-design/pro-descriptions";
 import ProDescriptions from "@ant-design/pro-descriptions";
 import UpdateForm from "./components/UpdateForm";
-import {FormattedMessage, history, SelectLang, useIntl, useModel} from 'umi';
+import {FormattedMessage, history, useIntl} from 'umi';
 
 const RedisInfo: React.FC = () => {
 
@@ -24,7 +24,7 @@ const RedisInfo: React.FC = () => {
     const [currentRow, setCurrentRow] = useState<REDIS_API.RedisInfoVo>();
 
 
-  const redisInfoPageColumns: ProColumns<REDIS_API.RedisInfoVo>[] = [
+    const redisInfoPageColumns: ProColumns<REDIS_API.RedisInfoVo>[] = [
       {
         title: (
           <FormattedMessage
@@ -205,6 +205,7 @@ const RedisInfo: React.FC = () => {
         <UpdateForm
           onSubmit={async (value) => {
             // const success = await handleUpdate(value);
+            console.log(value);
             const success = true;
             if (success) {
               handleUpdateModalVisible(false);

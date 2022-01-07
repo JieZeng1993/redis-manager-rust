@@ -1,21 +1,24 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import type {FormInstance} from 'antd';
-import {Alert, Button, Card, Descriptions, Divider, Result} from 'antd';
+import {Button, Card, Descriptions, Result} from 'antd';
 import {PageContainer} from '@ant-design/pro-layout';
 import ProForm, {ProFormDigit, ProFormText, StepsForm} from '@ant-design/pro-form';
 import styles from './style.less';
-import {useIntl, useParams} from 'umi';
-import { redisInfoFindById, redisInfoFindRelatedInfoRt} from "@/services/ant-design-pro/redisApi";
+import {useIntl, history,useParams} from 'umi';
+import {redisInfoFindBy, redisInfoFindRelatedInfoRt} from "@/services/ant-design-pro/redisApi";
+import type {ProColumns} from "@ant-design/pro-table";
+import ProTable from "@ant-design/pro-table";
+import {FormattedMessage} from "@@/plugin-locale/localeExports";
 
 const StepDescriptions: React.FC<{
-  stepData: REDIS_API.RedisInfoVo;
+  stepData: REDIS_API.RedisInfoVo|undefined;
   bordered?: boolean;
 }> = ({stepData, bordered}) => {
   //国际化
   const intl = useIntl();
 
-  if(stepData){
-    const {name, host, port, username, password, clusterType} = stepData ;
+  if (stepData) {
+    const {name, host, port, username, password, clusterType} = stepData;
     return (
       <Descriptions column={1} bordered={bordered}>
         <Descriptions.Item label={intl.formatMessage({
@@ -44,7 +47,7 @@ const StepDescriptions: React.FC<{
         })}> {clusterType}</Descriptions.Item>
       </Descriptions>
     );
-  }else {
+  } else {
     return (
       <Descriptions column={1} bordered={bordered}>
         <Descriptions.Item> {intl.formatMessage({
@@ -82,28 +85,19 @@ const StepResult: React.FC<{
 const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   // @ts-ignore
   const {id} = useParams();
+  const infoParams = {id:id};
 
   const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
-  const [redisNodeInfoVos, setRedisNodeInfoVos] = useState<REDIS_API.RedisNodeInfoVo[]>();
+  const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisInfoRelatedInfoRtDto>();
+
   const [current, setCurrent] = useState(0);
+
   const formRef = useRef<FormInstance>();
-
-  useEffect(() => {
-    redisInfoFindById(id).then((result) => {
-      const data = result?.data;
-      setStepData(data)
-    }).catch(() => {
-      setStepData(undefined)
-    })
-  },[id]);
-
-  console.log("RedisInfoUpdate INIT ");
 
   function onCurrentChange(number: number) {
     //number是从0开始的，
     if (number == 1) {
-      //需要加载相关节点信息
-      redisInfoFindRelatedInfoRt({
+      setNodeInfoParams({
         // @ts-ignore
         id: stepData.id,
         // @ts-ignore
@@ -118,16 +112,134 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
         username: stepData.username,
         // @ts-ignore
         password: stepData.password,
-      }).then((response) => {
-        setRedisNodeInfoVos(response.data);
-      }).catch(e=>{
-        console.log(e);
-        setRedisNodeInfoVos([]);
-      }).finally(()=>{
-        setCurrent(number);
-      })
+        request: true
+      });
+    } else {
+      setNodeInfoParams({request: false});
     }
+    setCurrent(number);
   }
+
+  const redisNodeInfoVoColumns: ProColumns<REDIS_API.RedisNodeInfoVo>[] = [
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.host"
+          defaultMessage="host"
+        />
+      ),
+      dataIndex: 'host',
+      // @ts-ignore
+      tip: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.tip.host"
+          defaultMessage="ip or host"
+        />
+      ),
+      valueType: 'textarea',
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.port"
+          defaultMessage="端口"
+        />
+      ),
+      dataIndex: 'port',
+      valueType: 'textarea',
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.clusterType"
+          defaultMessage="集群类型"
+        />
+      ),
+      dataIndex: 'clusterType',
+      // STANDALONE，CLUSTER，SENTINEL
+      valueEnum: {
+        "STANDALONE": {
+          text: (
+            <FormattedMessage id="redisManage.redisInfo.redisInfoVo.clusterType.STANDALONE" defaultMessage="单机"/>
+          ),
+          status: '单机',
+        },
+        "CLUSTER": {
+          text: (
+            <FormattedMessage id="redisManage.redisInfo.redisInfoVo.clusterType.CLUSTER" defaultMessage="集群"/>
+          ),
+          status: '集群',
+        },
+        "SENTINEL": {
+          text: (
+            <FormattedMessage id="redisManage.redisInfo.redisInfoVo.clusterType.SENTINEL" defaultMessage="哨兵"/>
+          ),
+          status: '哨兵',
+        },
+      },
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.updateTimeRange"
+          defaultMessage="更新时间范围"
+        />
+      ),
+      dataIndex: 'updateTimeRange',
+      valueType: 'dateRange',
+      hideInTable: true,
+      //详情的时候不展示
+      hideInDescriptions: true,
+      // initialValue: [moment(), moment().add(1, 'day')],
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.updateTime"
+          defaultMessage="更新时间"
+        />
+      ),
+      hideInSearch: true,
+      dataIndex: 'updateTime',
+      valueType: 'dateTime',
+      // sorter: (a, b) => a.updateTime - b.updateTime,
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisInfoVo.updateId"
+          defaultMessage="更新人"
+        />
+      ),
+      hideInSearch: true,
+      hideInTable: true,
+      //详情的时候不展示
+      hideInDescriptions: true,
+      dataIndex: 'updateId',
+      valueType: 'textarea',
+    },
+    {
+      title: <FormattedMessage id="operate" defaultMessage="operate"/>,
+      valueType: 'option',
+      render: (_, record) => [
+        <a
+          key="config"
+          onClick={() => {
+            console.log("redis connect 测试" + JSON.stringify(record));
+          }}
+        >
+          <FormattedMessage id="connection" defaultMessage="connection"/>
+          <FormattedMessage id="test" defaultMessage="test"/>
+        </a>,
+        // <a key="subscribeAlert" href="https://procomponents.ant.design/">
+        //   <FormattedMessage
+        //     id="pages.searchTable.subscribeAlert"
+        //     defaultMessage="Subscribe to alerts"
+        //   />
+        // </a>,
+      ],
+    },
+  ]
 
 
   //国际化
@@ -158,7 +270,8 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           }}
         >
           <StepsForm.StepForm<REDIS_API.RedisInfoVo>
-            formRef={formRef}
+            request={redisInfoFindBy}
+            params={infoParams}
             title={intl.formatMessage({
               id: 'rule.pleaseFill',
               defaultMessage: 'please fill',
@@ -166,7 +279,6 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
               id: 'redisManage.redisInfo.modify.title',
               defaultMessage: 'redis info',
             })}
-            initialValues={stepData}
             onFinish={async (values) => {
               setStepData(values);
               return true;
@@ -298,47 +410,33 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
             id: 'relatedInformation',
             defaultMessage: ' related information',
           })}>
-            <div className={styles.result}>
-              <Alert
-                closable
-                showIcon
-                message="确认转账后，资金将直接打入对方账户，无法退回。"
-                style={{marginBottom: 24}}
-              />
-              <StepDescriptions stepData={stepData ? stepData : {}} bordered/>
-              <Divider style={{margin: '24px 0'}}/>
-              <ProFormText.Password
-                label="支付密码"
-                width="md"
-                name="password"
-                required={false}
-                rules={[{required: true, message: '需要支付密码才能进行支付'}]}
-              />
-            </div>
+            <ProTable<REDIS_API.RedisNodeInfoVo, REDIS_API.RedisInfoRelatedInfoRtDto>
+              params={nodeInfoParams}
+              pagination={{position: []}}
+              headerTitle={intl.formatMessage({
+                id: 'redisManage.redisInfo.searchTable.title',
+                defaultMessage: 'redis信息列表',
+              })}
+              // actionRef={actionRef}
+              rowKey="id"
+              search={false}
+              toolBarRender={false}
+              request={redisInfoFindRelatedInfoRt}
+              columns={redisNodeInfoVoColumns}
+            />
+
           </StepsForm.StepForm>
           <StepsForm.StepForm title="完成">
             <StepResult
               onFinish={async () => {
-                setCurrent(0);
                 formRef.current?.resetFields();
+                history.goBack();
               }}
             >
               <StepDescriptions stepData={stepData}/>
             </StepResult>
           </StepsForm.StepForm>
         </StepsForm>
-        <Divider style={{margin: '40px 0 24px'}}/>
-        <div className={styles.desc}>
-          <h3>说明</h3>
-          <h4>转账到支付宝账户</h4>
-          <p>
-            如果需要，这里可以放一些关于产品的常见问题说明。如果需要，这里可以放一些关于产品的常见问题说明。如果需要，这里可以放一些关于产品的常见问题说明。
-          </p>
-          <h4>转账到银行卡</h4>
-          <p>
-            如果需要，这里可以放一些关于产品的常见问题说明。如果需要，这里可以放一些关于产品的常见问题说明。如果需要，这里可以放一些关于产品的常见问题说明。
-          </p>
-        </div>
       </Card>
     </PageContainer>
   );
