@@ -6,8 +6,9 @@ use poem_openapi::{
 };
 
 use crate::config::auth::Session;
-use crate::domain::dto::redis_info::RedisPageDto;
+use crate::domain::dto::redis_info::{RedisInfoRelatedInfoRtDto, RedisPageDto};
 use crate::domain::vo::redis_info::RedisInfoVo;
+use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 use crate::domain::vo::RespVO;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
@@ -39,9 +40,15 @@ enum PageRedisInfoResponse {
     /// Return the redis info.
     #[oai(status = 200)]
     Ok(Json<RespVO<Vec<RedisInfoVo>>>),
-    /// Return when the specified redis info is not found.
-    #[oai(status = 404)]
-    NotFound,
+    #[oai(status = 500)]
+    InnerError,
+}
+
+#[derive(ApiResponse)]
+enum RedisInfoRelatedInfoRtResponse {
+    /// Return the redis info.
+    #[oai(status = 200)]
+    Ok(Json<RespVO<Vec<RedisNodeInfoVo>>>),
     #[oai(status = 500)]
     InnerError,
 }
@@ -71,13 +78,27 @@ impl RedisInfoRest {
     async fn page_redis_info(&self, redis_info_page_dto: Json<RedisPageDto>) -> PageRedisInfoResponse {
         let redis_info_page_resp = CONTEXT.redis_info_service.page(redis_info_page_dto.0).await;
         match redis_info_page_resp {
-            Ok(redis_info_page_resp) =>  PageRedisInfoResponse::Ok(Json(redis_info_page_resp)),
+            Ok(redis_info_page_resp) => PageRedisInfoResponse::Ok(Json(redis_info_page_resp)),
             Err(_) => {
                 log::error!("server started");
                 PageRedisInfoResponse::InnerError
             }
         }
     }
+
+    ///实时查询节点相关信息
+    #[oai(path = "/redisInfo/relatedInfoRt", method = "post", tag = "ApiTags::RedisInfo")]
+    async fn related_info_rt(&self, redis_info_related_info_rt_dto: Json<RedisInfoRelatedInfoRtDto>) -> RedisInfoRelatedInfoRtResponse {
+        let redis_node_info_vo = CONTEXT.redis_info_service.related_info_rt(redis_info_related_info_rt_dto.0).await;
+        match redis_node_info_vo {
+            Ok(redis_node_info_vo) => RedisInfoRelatedInfoRtResponse::Ok(Json(RespVO::from(&redis_node_info_vo))),
+            Err(_) => {
+                log::error!("server started");
+                RedisInfoRelatedInfoRtResponse::InnerError
+            }
+        }
+    }
+
 
     // #[oai(path = "/redisInfo", method = "put", tag = "ApiTags::RedisInfo")]
     // async fn update_redis_info(&self, user_update_dto: Json<UserUpdateDto>, session: &Session) -> UpdateUserResponse {

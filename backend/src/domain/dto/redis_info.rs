@@ -51,3 +51,21 @@ impl IPageRequest for RedisPageDto {
 //         }
 //     }
 // }
+
+///实时查询节点相关信息请求
+#[derive(Debug, Object, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[oai(inline, rename_all = "camelCase")]
+pub struct RedisInfoRelatedInfoRtDto {
+    pub id: Option<i32>,
+    ///name校验重复（校验时，如果）
+    pub name: Option<String>,
+    ///redis的主机地址，可以是域名，也可以是ip
+    pub host: Option<String>,
+    ///redis的端口
+    pub port: Option<u16>,
+    ///用户名（空表示无需用户名）
+    pub username: Option<String>,
+    ///密码（空表示无密码）
+    pub password: Option<String>,
+}

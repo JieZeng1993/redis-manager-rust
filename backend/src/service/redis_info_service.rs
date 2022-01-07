@@ -6,11 +6,12 @@ use rbatis::plugin::page::{Page, PageRequest};
 
 use crate::config::auth;
 use crate::domain::dto::{convert_rbatis_page_request, convert_rbatis_page_resp_and_convert};
-use crate::domain::dto::redis_info::RedisPageDto;
+use crate::domain::dto::redis_info::{RedisInfoRelatedInfoRtDto, RedisPageDto};
 use crate::domain::dto::user1::User1UpdateDto;
 use crate::domain::dto::user::UserUpdateDto;
 use crate::domain::entity::redis_info::*;
 use crate::domain::vo::redis_info::*;
+use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 use crate::domain::vo::RespVO;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
@@ -60,6 +61,26 @@ impl RedisInfoService {
     pub async fn do_find_by_id(&self, id: i32) -> Result<Option<RedisInfo>> {
         let wrapper = CONTEXT.rbatis.new_wrapper().eq(RedisInfo::id(), id);
         return Ok(CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
+    }
+
+    ///实时查询节点相关信息
+    pub async fn related_info_rt(&self, redis_info_related_info_rt_dto: RedisInfoRelatedInfoRtDto) ->  Result<Vec<RedisNodeInfoVo>> {
+        return Ok(vec![RedisNodeInfoVo{
+            id: None,
+            redis_info_id: None,
+            node_id: Some("查询出来的node id".to_string()),
+            master_id: Some("查询出来的master id".to_string()),
+            host: Some("查询出来的host".to_string()),
+            port:  Some(6380),
+            node_role: Some("MASTER".to_string()),
+            node_status: Some("CONNECTED".to_string()),
+            slot_from: Some(0),
+            slot_to: Some(155),
+            create_time: None,
+            create_id: None,
+            update_time: None,
+            update_id: None
+        }])
     }
 
     // ///后台用户根据name查找
