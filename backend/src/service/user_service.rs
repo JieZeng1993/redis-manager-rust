@@ -10,7 +10,7 @@ use crate::domain::entity::user::User;
 use crate::domain::vo::user::{LoginVo, UserVo};
 use crate::mix::error::Error;
 use crate::mix::error::Result;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 pub struct UserService {}
 
@@ -26,8 +26,8 @@ impl UserService {
 
     /// 内部查询使用entity，到rest层再转为Vo
     pub async fn do_find_by_id(&self, id: i32) -> Result<Option<User>> {
-        let wrapper = CONTEXT.rbatis.new_wrapper().eq(User::id(), id);
-        return Ok(CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
+        let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(User::id(), id);
+        return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 
     ///后台用户根据name查找
@@ -63,13 +63,13 @@ impl UserService {
         let mut user_update_entity = user_update_dto.convert2entity();
         user_update_entity.update_id = update_id;
         user_update_entity.update_time = Some(DateTimeNative::now());
-        Ok(CONTEXT.rbatis.update_by_column("id", &user_update_entity).await?)
+        Ok(SERVICE_CONTEXT.rbatis.update_by_column("id", &user_update_entity).await?)
     }
 
 
     /// 内部查询使用entity，到rest层再转为Vo
     pub async fn do_find_by_name(&self, name: &String) -> Result<Option<User>> {
-        let wrapper = CONTEXT.rbatis.new_wrapper().eq(User::name(), name);
-        return Ok(CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
+        let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(User::name(), name);
+        return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 }

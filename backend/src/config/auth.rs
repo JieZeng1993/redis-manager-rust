@@ -10,7 +10,7 @@ use rand::{distributions::Alphanumeric, Rng, rngs::OsRng};
 use serde::{Deserialize, Serialize};
 
 use crate::domain::vo::user::LoginVo;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 const AUTHORIZATION_KEY: &'static str = "Authorization";
 
@@ -64,7 +64,7 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
                     Ok(auth) => {
                         let auth_key: String = format!("{}:{}", AUTHORIZATION_KEY, auth);
                         log!(Level::Trace,"request uri:{}, auth_key:{} start", uri,auth_key);
-                        let authorization = CONTEXT.cache_service.get_json::<Session>(&auth_key).await;
+                        let authorization = SERVICE_CONTEXT.cache_service.get_json::<Session>(&auth_key).await;
                         log!(Level::Trace,"request uri:{}, auth_key:{} finish",uri, auth_key);
                         match authorization {
                             Ok(authorization) => {
@@ -107,7 +107,7 @@ pub async fn get_session_id(login_vo: &LoginVo) -> String {
     let session_id = get_unique_id();
 
     //存储token
-    let set_result = CONTEXT.cache_service.set_json::<Session>(&format!("{}:{}", AUTHORIZATION_KEY, session_id),
+    let set_result = SERVICE_CONTEXT.cache_service.set_json::<Session>(&format!("{}:{}", AUTHORIZATION_KEY, session_id),
                                                                &Session {
                                                                    id: login_vo.id,
                                                                    name: login_vo.name.clone(),

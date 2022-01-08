@@ -25,7 +25,7 @@ log_pack_compress: "zip"
 #日志滚动保留-保留全部: All,按时间保留(秒): KeepTime(i64),按版本保留: KeepNum(i64)
 log_rolling_type: "KeepNum(20)"
 #日志等级-info,error,warn,debug,trace
-log_level: info
+log_level: trace
 #JwtToken秘钥
 jwt_secret: "abs_admin"
 #短信通道缓存（系统先把数据放入队列sms:send:，第三方短信sdk或程序需要从队列获取并发送，获得回执存入sms:resp:*）,格式为sms:send:手机号和sms:resp:手机号

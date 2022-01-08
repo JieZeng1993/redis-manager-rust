@@ -15,7 +15,7 @@ use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 use crate::domain::vo::RespVO;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 use crate::util::string::IsEmpty;
 
 pub struct RedisInfoService {}
@@ -27,7 +27,7 @@ impl RedisInfoService {
         match redis_info {
             Some(redis_info) => {
                 let mut redis_info_vo = convert_redis_info2redis_info_vo(redis_info);
-                let redis_node_info_vos = CONTEXT.redis_node_info_service.find_by_redis_info_id(redis_info_vo.id.unwrap()).await?;
+                let redis_node_info_vos = SERVICE_CONTEXT.redis_node_info_service.find_by_redis_info_id(redis_info_vo.id.unwrap()).await?;
                 redis_info_vo.redis_node_infos = Some(redis_node_info_vos);
                 Ok(Some(redis_info_vo))
             }
@@ -37,7 +37,7 @@ impl RedisInfoService {
 
     ///redis info分页
     pub async fn page(&self, redis_page_dto: RedisPageDto) -> Result<RespVO<Vec<RedisInfoVo>>> {
-        let wrapper = CONTEXT
+        let wrapper = SERVICE_CONTEXT
             .rbatis
             .new_wrapper()
             .do_if(!redis_page_dto.name.is_empty(), |w| w.like(RedisInfo::name(), &redis_page_dto.name))
@@ -49,7 +49,7 @@ impl RedisInfoService {
             .do_if(redis_page_dto.update_time_end.is_some(), |w| w.le(RedisInfo::update_time(), &redis_page_dto.update_time_end))
             .order_by(false, &[RedisInfo::update_time()]);
 
-        let data = CONTEXT
+        let data = SERVICE_CONTEXT
             .rbatis
             .fetch_page_by_wrapper::<RedisInfo>(wrapper, &convert_rbatis_page_request(redis_page_dto))
             .await?;
@@ -59,8 +59,8 @@ impl RedisInfoService {
 
     /// 根据id查找entity
     pub async fn do_find_by_id(&self, id: i32) -> Result<Option<RedisInfo>> {
-        let wrapper = CONTEXT.rbatis.new_wrapper().eq(RedisInfo::id(), id);
-        return Ok(CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
+        let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(RedisInfo::id(), id);
+        return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 
     ///实时查询节点相关信息

@@ -5,7 +5,7 @@ use poem_openapi::types::{ParseFromJSON, ToJSON};
 use serde::{Deserialize, Serialize};
 
 use crate::mix::error::Error;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 pub mod user1;
 pub mod user;

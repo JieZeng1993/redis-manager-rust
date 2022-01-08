@@ -12,7 +12,7 @@ use crate::domain::vo::user::{LoginVo, UserVo};
 use crate::domain::vo::user1::User1Vo;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 #[derive(Tags)]
 enum ApiTags {
@@ -64,7 +64,7 @@ impl UserRest {
     /// 登录
     #[oai(path = "/user/login", method = "post", tag = "ApiTags::User")]
     async fn login(&self, login_dto: Json<UserLoginDto>) -> LoginResponse {
-        let user = CONTEXT.user_service.login(login_dto.name.as_ref().unwrap(), login_dto.password.as_ref().unwrap()).await;
+        let user = SERVICE_CONTEXT.user_service.login(login_dto.name.as_ref().unwrap(), login_dto.password.as_ref().unwrap()).await;
         match user {
             Ok(user) => {
                 match user {
@@ -86,20 +86,20 @@ impl UserRest {
 
     #[oai(path = "/user/:id", method = "get", tag = "ApiTags::User")]
     async fn find_user(&self, id: Path<i32>) -> FindUserResponse {
-        let user = CONTEXT.user_service.find_by_id(id.0).await;
+        let user = SERVICE_CONTEXT.user_service.find_by_id(id.0).await;
         deal_find_user(user)
     }
 
     ///获取当前已登录的用户信息
     #[oai(path = "/user/loginUser", method = "get", tag = "ApiTags::User")]
     async fn login_user(&self, session: &Session) -> FindUserResponse {
-        let user = CONTEXT.user_service.find_by_id(session.id.unwrap()).await;
+        let user = SERVICE_CONTEXT.user_service.find_by_id(session.id.unwrap()).await;
         deal_find_user(user)
     }
 
     #[oai(path = "/user", method = "put", tag = "ApiTags::User")]
     async fn update_user(&self, user_update_dto: Json<UserUpdateDto>, session: &Session) -> UpdateUserResponse {
-        let user = CONTEXT.user_service.update(user_update_dto.0, session.id).await;
+        let user = SERVICE_CONTEXT.user_service.update(user_update_dto.0, session.id).await;
         match user {
             Ok(user) => UpdateUserResponse::Ok(Json(RespVO::from(&user))),
             Err(_) => {

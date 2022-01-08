@@ -2,7 +2,7 @@ use getset::{CopyGetters, Getters, MutGetters, Setters};
 use yaml_rust::{Yaml, YamlLoader};
 
 ///服务启动配置
-#[derive(Getters, Setters, MutGetters, CopyGetters)]
+#[derive(Getters, Setters, MutGetters, CopyGetters, Clone)]
 pub struct ApplicationConfig {
     pub debug: bool,
     pub server_name: String,
@@ -149,4 +149,8 @@ fn to_vec_string(arg: Vec<Yaml>) -> Vec<String> {
         arr.push(x.as_str().unwrap_or("").to_string());
     }
     return arr;
+}
+
+lazy_static! {
+    pub static ref CONFIG_CONTEXT: ApplicationConfig = ApplicationConfig::default();
 }

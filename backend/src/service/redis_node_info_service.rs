@@ -10,7 +10,7 @@ use crate::domain::entity::redis_node_info::*;
 use crate::domain::vo::redis_node_info::*;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 pub struct RedisNodeInfoService {}
 
@@ -26,8 +26,8 @@ impl RedisNodeInfoService {
 
     /// 内部查询使用entity，到rest层再转为Vo
     pub async fn do_find_by_id(&self, id: i32) -> Result<Option<RedisNodeInfo>> {
-        let wrapper = CONTEXT.rbatis.new_wrapper().eq(RedisNodeInfo::id(), id);
-        return Ok(CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
+        let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(RedisNodeInfo::id(), id);
+        return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 
     ///后台用户根据id查找
@@ -38,8 +38,8 @@ impl RedisNodeInfoService {
 
     /// 根据redis_info_id查询所有node信息
     pub async fn do_find_by_redis_info_id(&self, redis_info_id: i32) -> Result<Vec<RedisNodeInfo>> {
-        let wrapper = CONTEXT.rbatis.new_wrapper().eq(RedisNodeInfo::redis_info_id(), redis_info_id);
-        return Ok(CONTEXT.rbatis.fetch_list_by_wrapper(wrapper).await?);
+        let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(RedisNodeInfo::redis_info_id(), redis_info_id);
+        return Ok(SERVICE_CONTEXT.rbatis.fetch_list_by_wrapper(wrapper).await?);
     }
 
     // ///后台用户根据name查找

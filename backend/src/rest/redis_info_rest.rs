@@ -12,7 +12,7 @@ use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 use crate::domain::vo::RespVO;
 use crate::mix::error::Error;
 use crate::mix::error::Result;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 #[derive(Tags)]
 enum ApiTags {
@@ -70,13 +70,13 @@ enum UpdateUserResponse {
 impl RedisInfoRest {
     #[oai(path = "/redisInfo/:id", method = "get", tag = "ApiTags::RedisInfo")]
     async fn find_redis_info(&self, id: Path<i32>) -> FindRedisInfoResponse {
-        let user = CONTEXT.redis_info_service.find_by_id(id.0).await;
+        let user = SERVICE_CONTEXT.redis_info_service.find_by_id(id.0).await;
         deal_find_redis_info(user)
     }
 
     #[oai(path = "/redisInfo/page", method = "post", tag = "ApiTags::RedisInfo")]
     async fn page_redis_info(&self, redis_info_page_dto: Json<RedisPageDto>) -> PageRedisInfoResponse {
-        let redis_info_page_resp = CONTEXT.redis_info_service.page(redis_info_page_dto.0).await;
+        let redis_info_page_resp = SERVICE_CONTEXT.redis_info_service.page(redis_info_page_dto.0).await;
         match redis_info_page_resp {
             Ok(redis_info_page_resp) => PageRedisInfoResponse::Ok(Json(redis_info_page_resp)),
             Err(_) => {
@@ -89,7 +89,7 @@ impl RedisInfoRest {
     ///实时查询节点相关信息
     #[oai(path = "/redisInfo/relatedInfoRt", method = "post", tag = "ApiTags::RedisInfo")]
     async fn related_info_rt(&self, redis_info_related_info_rt_dto: Json<RedisInfoRelatedInfoRtDto>) -> RedisInfoRelatedInfoRtResponse {
-        let redis_node_info_vo = CONTEXT.redis_info_service.related_info_rt(redis_info_related_info_rt_dto.0).await;
+        let redis_node_info_vo = SERVICE_CONTEXT.redis_info_service.related_info_rt(redis_info_related_info_rt_dto.0).await;
         match redis_node_info_vo {
             Ok(redis_node_info_vo) => RedisInfoRelatedInfoRtResponse::Ok(Json(RespVO::from(&redis_node_info_vo))),
             Err(_) => {

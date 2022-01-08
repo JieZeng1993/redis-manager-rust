@@ -8,7 +8,7 @@ use poem_openapi::{
 use crate::domain::dto::user1::User1UpdateDto;
 use crate::domain::vo::RespVO;
 use crate::domain::vo::user1::User1Vo;
-use crate::service::CONTEXT;
+use crate::service::SERVICE_CONTEXT;
 
 #[derive(Tags)]
 enum ApiTags {
@@ -48,7 +48,7 @@ impl User1Rest {
     /// Find user by id
     #[oai(path = "/user1/:user_id", method = "get", tag = "ApiTags::User1")]
     async fn find_user(&self, user_id: Path<i64>) -> FindUserResponse {
-        let user = CONTEXT.user1_service.find(user_id.0).await;
+        let user = SERVICE_CONTEXT.user1_service.find(user_id.0).await;
         match user {
             Ok(user) => match user {
                 Some(user) => FindUserResponse::Ok(Json(RespVO::from(&user))),
@@ -63,7 +63,7 @@ impl User1Rest {
 
     #[oai(path = "/user1", method = "put", tag = "ApiTags::User1")]
     async fn update_user(&self, user1_update_dto: Json<User1UpdateDto>) -> UpdateUserResponse {
-        let user = CONTEXT.user1_service.update(user1_update_dto.0).await;
+        let user = SERVICE_CONTEXT.user1_service.update(user1_update_dto.0).await;
         match user {
             Ok(user) => UpdateUserResponse::Ok(Json(RespVO::from(&user))),
             Err(_) => {
