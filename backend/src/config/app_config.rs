@@ -122,13 +122,6 @@ impl Default for ApplicationConfig {
                 .unwrap_or(0)
                 .to_owned(),
         };
-
-        if result.debug {
-            println!("[abs_admin] debug_mode is enable!")
-        } else {
-            println!("[abs_admin] release_mode is enable!")
-        }
-
         result
     }
 }
@@ -147,7 +140,7 @@ fn get_cfg<'a>(docs: &'a Vec<Yaml>, key: &str) -> &'a Yaml {
             _ => {}
         }
     }
-    panic!("[abs_admin] application.yml key: '{}' not exist!", key)
+    panic!("[rust-manager-rust] application.yml key: '{}' not exist!", key)
 }
 
 fn to_vec_string(arg: Vec<Yaml>) -> Vec<String> {

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use async_trait::async_trait;
+use log::{Level, log};
 use log::error;
 use redis::{ConnectionAddr, ConnectionInfo, RedisConnectionInfo, RedisResult};
 use redis::aio::Connection;
@@ -17,7 +18,7 @@ pub struct RedisService {
 
 impl RedisService {
     pub fn new(host: String, port: u16, db: i64, username: Option<String>, password: Option<String>) -> Self {
-        println!("[abs_admin] conncect redis...");
+        log!(Level::Info,"connect redis start");
         let client = redis::Client::open(ConnectionInfo {
             addr: ConnectionAddr::Tcp(host, port),
             redis: RedisConnectionInfo {
@@ -26,7 +27,8 @@ impl RedisService {
                 password,
             },
         }).unwrap();
-        println!("[abs_admin] conncect redis success!");
+        log!(Level::Info,"connect redis success");
+        log!(Level::Info,"init cache finish");
         Self { client }
     }
 

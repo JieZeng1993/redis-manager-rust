@@ -15,7 +15,7 @@ logic_column: "del"
 logic_un_deleted: 0
 logic_deleted: 1
 #日志文件存放目录
-log_dir: "target/logs/"
+log_dir: target/logs/
 #日志通道最大缓存日志条数
 log_cup: 10000
 #日志分割尺寸-单位KB,MB,GB
@@ -25,7 +25,7 @@ log_pack_compress: "zip"
 #日志滚动保留-保留全部: All,按时间保留(秒): KeepTime(i64),按版本保留: KeepNum(i64)
 log_rolling_type: "KeepNum(20)"
 #日志等级-info,error,warn,debug,trace
-log_level: "info"
+log_level: info
 #JwtToken秘钥
 jwt_secret: "abs_admin"
 #短信通道缓存（系统先把数据放入队列sms:send:，第三方短信sdk或程序需要从队列获取并发送，获得回执存入sms:resp:*）,格式为sms:send:手机号和sms:resp:手机号

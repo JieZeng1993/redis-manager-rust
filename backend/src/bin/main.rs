@@ -2,6 +2,8 @@
 extern crate rbatis;
 #[macro_use]
 extern crate serde;
+
+use log::{Level, log};
 // use opentelemetry::{
 //     Context,
 //     global,
@@ -20,17 +22,17 @@ use poem_openapi::{
 use rbatis::crud::CRUD;
 use rbatis::rbatis::Rbatis;
 use tokio::sync::Mutex;
-use tracing::{debug, Level, span};
-/*use tracing::info;
-use tracing_subscriber::{filter::LevelFilter, prelude::*};*/
+use tracing::span;
 use tracing_subscriber::fmt;
-use redis_manager_rust::config::auth::HeaderAuth;
 
-use redis_manager_rust::config::log as rabit_log;
+use redis_manager_rust::config::auth::HeaderAuth;
+use redis_manager_rust::rest::redis_info_rest::RedisInfoRest;
 use redis_manager_rust::rest::user1_rest::User1Rest;
 use redis_manager_rust::rest::user_rest::UserRest;
-use redis_manager_rust::rest::redis_info_rest::RedisInfoRest;
+use redis_manager_rust::service::CONTEXT;
 
+/*use tracing::info;
+use tracing_subscriber::{filter::LevelFilter, prelude::*};*/
 // fn init_tracer() -> Tracer {
 //     global::set_text_map_propagator(TraceContextPropagator::new());
 //     opentelemetry_jaeger::new_pipeline()
@@ -42,34 +44,24 @@ use redis_manager_rust::rest::redis_info_rest::RedisInfoRest;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    debug!("开始初始化");
-    rabit_log::init_log();
-    debug!("开始初始化1");
+    let log_dir = &CONTEXT.config.log_dir;
+    log!(Level::Info,"log file path:{}", log_dir);
 
-    if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "poem=debug");
-    }
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
-        .init();
-
-    let api = OpenApiService::new((User1Rest,UserRest,RedisInfoRest), "api", "1.1")
+    let api = OpenApiService::new((User1Rest, UserRest, RedisInfoRest), "api", "1.1")
         .server("http://localhost:3001/api");
-    // let api_service =
-    //     OpenApiService::new(Api::default(), "Users", "1.0").server("http://localhost:3000/api");
     let swagger_ui = api.swagger_ui();
 
     // let tracer = init_tracer();
 
     Server::new(TcpListener::bind("127.0.0.1:3001"))
         .run(Route::new().nest("/api", api)
-            .nest("/swagger_ui", swagger_ui)
-                 .with( HeaderAuth{
+                 .nest("/swagger_ui", swagger_ui)
+                 .with(HeaderAuth {
                      header_key: "Authorization".to_string()
                  })
-            // .data(tracer.clone())
-            // .with(OpenTelemetryMetrics::new())
-            // .with(OpenTelemetryTracing::new(tracer))
+             // .data(tracer.clone())
+             // .with(OpenTelemetryMetrics::new())
+             // .with(OpenTelemetryTracing::new(tracer))
         )
         .await
 }

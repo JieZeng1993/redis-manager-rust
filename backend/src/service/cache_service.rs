@@ -1,6 +1,7 @@
 use std::ops::Deref;
 use std::time::Duration;
 
+use log::{Level,log};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -27,7 +28,8 @@ pub struct CacheService {
 
 impl CacheService {
     pub fn new(cfg: &ApplicationConfig) -> Self {
-        println!("开始初始化缓存");
+        log!(Level::Info,"init cache start");
+
         Self {
             inner: Box::new(RedisService::new(
                 cfg.redis_host.clone(),

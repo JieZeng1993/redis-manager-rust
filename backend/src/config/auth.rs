@@ -48,7 +48,7 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
 
     async fn call(&self, mut req: Request) -> poem::Result<Self::Output> {
         let uri = req.uri();
-        log!(Level::Info,"request uri:{}", uri);
+        log!(Level::Trace,"request uri:{}", uri);
 
         if uri.eq("/api/user/login") || uri.eq("/favicon.ico") {
             //登录接口跳过鉴权
@@ -62,10 +62,14 @@ impl<E: Endpoint> Endpoint for HeaderAuthEndpoint<E> {
             Some(auth) => {
                 match auth.to_str() {
                     Ok(auth) => {
-                        let authorization = CONTEXT.cache_service.get_json::<Session>(&format!("{}:{}", AUTHORIZATION_KEY, auth)).await;
+                        let auth_key: String = format!("{}:{}", AUTHORIZATION_KEY, auth);
+                        log!(Level::Trace,"request uri:{}, auth_key:{} start", uri,auth_key);
+                        let authorization = CONTEXT.cache_service.get_json::<Session>(&auth_key).await;
+                        log!(Level::Trace,"request uri:{}, auth_key:{} finish",uri, auth_key);
                         match authorization {
                             Ok(authorization) => {
                                 req.extensions_mut().insert(authorization);
+                                log!(Level::Trace,"request uri:{}, pass", req.uri());
                                 self.ep.call(req).await
                             }
                             Err(_) => Err(Error::from_status(StatusCode::UNAUTHORIZED))

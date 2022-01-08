@@ -86,7 +86,7 @@ impl ICacheService for MemService {
             return Ok(v.to_string());
         }
         return Result::Err(crate::mix::error::Error::E(format!(
-            "[abs_admin][mem_service]insert fail!"
+            "[redis_manager_rust][mem_service]insert fail!"
         )));
     }
 

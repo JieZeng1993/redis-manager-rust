@@ -1,4 +1,8 @@
+use log::{Level, log};
 use rbatis::rbatis::Rbatis;
+use tracing_subscriber::fmt::writer::MakeWriterExt;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 use cache_service::CacheService;
 
@@ -21,18 +25,37 @@ pub struct ServiceContext {
     pub user_service: user_service::UserService,
     pub redis_info_service: redis_info_service::RedisInfoService,
     pub redis_node_info_service: redis_node_info_service::RedisNodeInfoService,
-    //service
-    // pub sys_res_service: SysResService,
-    // pub sys_user_service: SysUserService,
-    // pub sys_role_service: SysRoleService,
-    // pub sys_role_res_service: SysRoleResService,
-    // pub sys_user_role_service: SysUserRoleService,
-    // pub sys_dict_service: SysDictService,
 }
 
 impl Default for ServiceContext {
     fn default() -> Self {
+        println!("init");
         let config = ApplicationConfig::default();
+
+        //init log
+        std::fs::create_dir_all(&config.log_dir);
+
+        if std::env::var_os("RUST_LOG").is_none() {
+            std::env::set_var("RUST_LOG", "poem=debug");
+        }
+        let file_appender = tracing_appender::rolling::hourly(&config.log_dir, "prefix.log");
+        let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+
+        tracing_subscriber::fmt::Subscriber::builder()
+            .with_max_level(str_to_log_level(&config.log_level))
+            .finish()
+            .with(tracing_subscriber::fmt::Layer::default()
+                .with_writer(non_blocking))
+            .init();
+
+        log!(Level::Info,"init log finish");
+
+        if config.debug {
+            log!(Level::Info,"debug_mode is enable!");
+        } else {
+            log!(Level::Info,"release_mode is enable!");
+        }
+
         let rabits = tokio::task::block_in_place(|| {
             tokio::runtime::Handle::current().block_on(async {
                 crate::mapper::init_rbatis(&config).await
@@ -45,12 +68,6 @@ impl Default for ServiceContext {
             config,
             user1_service: user1_service::User1Service {},
             user_service: user_service::UserService {},
-            // sys_res_service: SysResService {},
-            // sys_user_service: SysUserService {},
-            // sys_role_service: SysRoleService {},
-            // sys_role_res_service: SysRoleResService {},
-            // sys_user_role_service: SysUserRoleService {},
-            // sys_dict_service: SysDictService {},
             redis_info_service: RedisInfoService {},
             redis_node_info_service: RedisNodeInfoService {},
         }
@@ -62,17 +79,13 @@ lazy_static! {
 }
 
 
-// /// rabtis初始化
-// pub async fn init_rbatis() -> Rbatis {
-//     fast_log::init_log("requests.log", 1000, log::Level::Info, None, true);
-//
-//     log::info!("linking database...");
-//
-//     let rb = Rbatis::new();
-//     rb.link("mysql://root:123456@mubuntu:3306/test")
-//         .await
-//         .unwrap();
-//
-//     log::info!("linked database...");
-//     return rb;
-// }
+fn str_to_log_level(arg: &str) -> tracing::Level {
+    return match arg {
+        "warn" => tracing::Level::WARN,
+        "error" => tracing::Level::ERROR,
+        "trace" => tracing::Level::TRACE,
+        "info" => tracing::Level::INFO,
+        "debug" => tracing::Level::DEBUG,
+        _ => tracing::Level::INFO,
+    };
+}
