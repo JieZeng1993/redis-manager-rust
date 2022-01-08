@@ -1,5 +1,11 @@
+use std::io;
+use std::io::stdout;
+
 use log::{Level, log};
 use rbatis::rbatis::Rbatis;
+use tracing_subscriber::{fmt, Layer, Registry};
+use tracing_subscriber::filter::FilterFn;
+use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -41,12 +47,39 @@ impl Default for ServiceContext {
         let file_appender = tracing_appender::rolling::hourly(&config.log_dir, "prefix.log");
         let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
-        tracing_subscriber::fmt::Subscriber::builder()
-            .with_max_level(str_to_log_level(&config.log_level))
-            .finish()
-            .with(tracing_subscriber::fmt::Layer::default()
-                .with_writer(non_blocking))
-            .init();
+        // tracing_subscriber::fmt::Subscriber::builder()
+        //     .with_max_level(str_to_log_level(&config.log_level))
+        //     .finish()
+        //     .with(tracing_subscriber::fmt::Layer::default()
+        //         .with_writer(non_blocking))
+        //     .init();
+
+        // let collector =  tracing_subscriber::registry()
+        //     .with( Subscriber::new()
+        //         .with_writer(stdout())
+        //         .with_target(false))
+        //     .with( Subscriber::new()
+        //         .with_writer(non_blocking)
+        //         .with_target(false));
+        //
+        // tracing::collect::set_global_default(collector).expect("unable to set tracing collector");
+
+        //过滤
+        let err_filter = FilterFn::new(|metadata| {
+            true
+        });
+        let info_filter = FilterFn::new(|metadata| true);
+
+        let err = fmt::Layer::new()
+            .with_writer(std::io::stdout());
+        let info = fmt::Layer::new()
+            .with_writer(non_blocking);
+
+        let subscriber = Registry::default()
+            .with(info.with_filter(info_filter))
+            .with(err.with_filter(err_filter));
+
+        tracing::subscriber::set_global_default(subscriber).expect("Unable to set global subscriber");
 
         log!(Level::Info,"init log finish");
 
