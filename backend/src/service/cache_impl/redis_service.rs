@@ -3,8 +3,6 @@ use std::time::Duration;
 use async_trait::async_trait;
 use log::{Level, log};
 use log::error;
-use redis::{ConnectionAddr, ConnectionInfo, RedisConnectionInfo, RedisResult};
-use redis::aio::Connection;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -19,9 +17,9 @@ pub struct RedisService {
 impl RedisService {
     pub fn new(host: String, port: u16, db: i64, username: Option<String>, password: Option<String>) -> Self {
         log!(Level::Info,"connect redis start");
-        let client = redis::Client::open(ConnectionInfo {
-            addr: ConnectionAddr::Tcp(host, port),
-            redis: RedisConnectionInfo {
+        let client = redis::Client::open(redis::ConnectionInfo {
+            addr: redis::ConnectionAddr::Tcp(host, port),
+            redis: redis::RedisConnectionInfo {
                 db,
                 username,
                 password,
@@ -32,7 +30,7 @@ impl RedisService {
         Self { client }
     }
 
-    pub async fn get_conn(&self) -> Result<Connection> {
+    pub async fn get_conn(&self) -> Result<redis::aio::Connection> {
         let conn = self.client.get_async_connection().await;
         if conn.is_err() {
             let err = format!("RedisService connect fail:{}", conn.err().unwrap());
@@ -51,7 +49,7 @@ impl ICacheService for RedisService {
 
     async fn get_string(&self, k: &str) -> Result<String> {
         let mut conn = self.get_conn().await?;
-        let result: RedisResult<Option<String>> =
+        let result: redis::RedisResult<Option<String>> =
             redis::cmd("GET").arg(&[k]).query_async(&mut conn).await;
         match result {
             Ok(v) => {

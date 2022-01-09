@@ -1,7 +1,7 @@
 import type {Settings as LayoutSettings} from '@ant-design/pro-layout';
 import {PageLoading, SettingDrawer} from '@ant-design/pro-layout';
 import type {RunTimeLayoutConfig} from 'umi';
-import {history, Link} from 'umi';
+import {history, Link, RequestConfig} from 'umi';
 import RightContent from '@/components/RightContent';
 import Footer from '@/components/Footer';
 import {currentUser as queryCurrentUser} from './services/ant-design-pro/userApi';
@@ -109,7 +109,7 @@ export const layout: RunTimeLayoutConfig = ({initialState, setInitialState}) => 
       request: async (params, defaultMenuData) => {
         // initialState.currentUser 中包含了所有用户信息
         // const menuData = await fetchMenuData();
-        console.log( defaultMenuData)
+        console.log(defaultMenuData)
         return defaultMenuData;
       },
     },
@@ -117,7 +117,7 @@ export const layout: RunTimeLayoutConfig = ({initialState, setInitialState}) => 
   };
 };
 
-export const request = {
+export const request: RequestConfig = {
   middlewares: [
     async function middlewareA(ctx: any, next: () => any) {
       const authorization = localStorage.getItem("authorization");
@@ -136,5 +136,14 @@ export const request = {
     async function responseInterceptor(response: Response, options: RequestOptionsInit) {
       return response;
     }
-  ]
+  ],
+  errorConfig: {
+    adaptor: (resData) => {
+      return {
+        ...resData,
+        errorMessage: resData.msg,
+      };
+    },
+  },
 }
+

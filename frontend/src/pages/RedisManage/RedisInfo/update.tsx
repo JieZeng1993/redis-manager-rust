@@ -4,14 +4,15 @@ import {Button, Card, Descriptions, Result} from 'antd';
 import {PageContainer} from '@ant-design/pro-layout';
 import ProForm, {ProFormDigit, ProFormText, StepsForm} from '@ant-design/pro-form';
 import styles from './style.less';
-import {useIntl, history,useParams} from 'umi';
+import {history, useIntl, useParams} from 'umi';
 import {redisInfoFindBy, redisInfoFindRelatedInfoRt} from "@/services/ant-design-pro/redisApi";
 import type {ProColumns} from "@ant-design/pro-table";
 import ProTable from "@ant-design/pro-table";
 import {FormattedMessage} from "@@/plugin-locale/localeExports";
+import {toNumber} from "lodash";
 
 const StepDescriptions: React.FC<{
-  stepData: REDIS_API.RedisInfoVo|undefined;
+  stepData: REDIS_API.RedisInfoVo | undefined;
   bordered?: boolean;
 }> = ({stepData, bordered}) => {
   //国际化
@@ -85,7 +86,7 @@ const StepResult: React.FC<{
 const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   // @ts-ignore
   const {id} = useParams();
-  const infoParams = {id:id};
+  const infoParams = {id: id};
 
   const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
   const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisInfoRelatedInfoRtDto>();
@@ -280,6 +281,9 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
               defaultMessage: 'redis info',
             })}
             onFinish={async (values) => {
+              if (infoParams.id) {
+                values.id = toNumber(infoParams.id);
+              }
               setStepData(values);
               return true;
             }}

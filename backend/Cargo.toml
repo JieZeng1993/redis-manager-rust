@@ -9,6 +9,7 @@ edition = "2021"
 poem = {version = "1", features = ["opentelemetry", "prometheus"]}
 poem-openapi = { version = "1", features = ["swagger-ui", "email","chrono"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio-test = "0.4.*"
 slab = "0.4.5"
 
 tracing= "0.1"
@@ -38,7 +39,7 @@ getset = "0.1.2"
 lazy_static = "1"
 async-trait = "0.1"
 
-redis = { version = "*", features = ["async-std-comp"] }
+redis = { version = "*", features = ["tokio-comp","tokio-native-tls-comp"] }
 
 yaml-rust = "0.4"
 

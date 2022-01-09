@@ -92,10 +92,7 @@ impl RedisInfoRest {
         let redis_node_info_vo = SERVICE_CONTEXT.redis_info_service.related_info_rt(redis_info_related_info_rt_dto.0).await;
         match redis_node_info_vo {
             Ok(redis_node_info_vo) => RedisInfoRelatedInfoRtResponse::Ok(Json(RespVO::from(&redis_node_info_vo))),
-            Err(_) => {
-                log::error!("server started");
-                RedisInfoRelatedInfoRtResponse::InnerError
-            }
+            Err(error) => RedisInfoRelatedInfoRtResponse::Ok(Json(RespVO::from_error_code(error)))
         }
     }
 

@@ -84,8 +84,22 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             code_str = CODE_COMMON_FAIL.to_string();
         }
         Self {
-            success: true,
+            success: false,
             msg: Some(arg.to_string()),
+            error_code: Some(code_str),
+            data: None,
+            current: None,
+            page_size: None,
+            total: None,
+        }
+    }
+
+    pub fn from_error_code(arg: Error) -> Self {
+        let mut code_str = arg.to_string();
+        Self {
+            success: false,
+            //这个地方后续需要国际化
+            msg: Some(code_str.clone()),
             error_code: Some(code_str),
             data: None,
             current: None,
@@ -100,7 +114,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             code_str = CODE_COMMON_FAIL.to_string();
         }
         Self {
-            success: true,
+            success: false,
             msg: Some(info.to_string()),
             error_code: Some(code_str),
             data: None,
