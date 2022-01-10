@@ -132,19 +132,11 @@ impl RedisInfoService {
 
         //连接没有问题
         //查询集群信息
-        let redis_info: RedisResult<redis::InfoDict> = redis::cmd("info").query_async(&mut connection).await;
-        let redis_info = deal_redis_result(redis_info)?;
+        let cluster_nodes: RedisResult<String> = redis::cmd("cluster").arg("nodes").query_async(&mut connection).await;
 
-        let cluster_enable: Option<i32> = redis_info.get("cluster_enabled");
-
-        if cluster_enable.is_none() {
-            return Err(crate::mix::error::Error::from("redisInfo.connection.error.getVersionFail"));
-        }
-
-        let cluster_enable = cluster_enable.unwrap();
-
-        if cluster_enable == 0 {
-            //单机
+        let cluster_nodes_ref = cluster_nodes.as_ref();
+        if cluster_nodes_ref.is_err() && cluster_nodes_ref.err().unwrap().detail().unwrap_or("").contains("cluster support disabled") {
+            //单节点，这是正常的响应
             return Ok(vec![RedisNodeInfoVo {
                 id: redis_info_related_info_rt_dto.id,
                 redis_info_id: None,
@@ -164,26 +156,32 @@ impl RedisInfoService {
                 update_time: None,
                 update_id: None,
             }]);
-        } else {
-            //判断redis是哨兵还是cluster
         }
+        //单节点
+        let cluster_nodes = deal_redis_result(cluster_nodes)?;
 
-        return Ok(vec![RedisNodeInfoVo {
-            id: None,
-            redis_info_id: None,
-            node_id: Some("查询出来的node id".to_string()),
-            master_id: Some("查询出来的master id".to_string()),
-            host: Some("查询出来的host".to_string()),
-            port: Some(6380),
-            node_role: Some("MASTER".to_string()),
-            node_status: Some("CONNECTED".to_string()),
-            slot_from: Some(0),
-            slot_to: Some(155),
-            create_time: None,
-            create_id: None,
-            update_time: None,
-            update_id: None,
-        }]);
+        //只需要处理哨兵和cluster，目前只处理cluster
+        log!(Level::Info,"cluster_nodes:{}",cluster_nodes);
+        let cluster_nodes = cluster_nodes.split("\n").into_iter().map(|cluster_node_info|
+            //转换
+            RedisNodeInfoVo {
+                id: None,
+                redis_info_id: None,
+                node_id: Some("查询出来的node id".to_string()),
+                master_id: Some("查询出来的master id".to_string()),
+                host: Some("查询出来的host".to_string()),
+                port: Some(6380),
+                node_role: Some("MASTER".to_string()),
+                node_status: Some("CONNECTED".to_string()),
+                slot_from: Some(0),
+                slot_to: Some(155),
+                create_time: None,
+                create_id: None,
+                update_time: None,
+                update_id: None,
+            }
+        ).collect();
+        return Ok(cluster_nodes);
     }
 }
 
@@ -245,6 +243,24 @@ mod test {
     use tokio_test::block_on;
 
     use crate::service::redis_info_service::get_conn;
+
+    #[test]
+    fn test_split() {
+        let str = "String1 1\r\nString2 2\r\nString3 3".to_string();
+
+        for x in str.split("\n") {
+            println!("{:?}", x);
+        }
+        let collect: Vec<String> = str.split("\n").into_iter().map(|str| str.to_owned() + "234").collect();
+        println!("map: {:?}", collect);
+        //
+        // let strings = vec!["tofu", "93", "18"];
+        // let numbers: Vec<_> = strings
+        //     .into_iter()
+        //     .map(|s| s.parse::<i32>())
+        //     .collect();
+        // println!("Results: {:?}", numbers);
+    }
 
     #[test]
     fn test_connection() {
