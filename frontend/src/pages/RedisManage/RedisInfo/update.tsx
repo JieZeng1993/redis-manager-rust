@@ -91,6 +91,9 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
   const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisInfoRelatedInfoRtDto>();
 
+  //保存最新的值，方便保存使用
+  let nodeInfoData: REDIS_API.RedisNodeInfoVo[] = [];
+
   const [current, setCurrent] = useState(0);
 
   const formRef = useRef<FormInstance>();
@@ -119,6 +122,26 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
       setNodeInfoParams({request: false});
     }
     setCurrent(number);
+  }
+
+  //处理新数据没有id的情况
+  function redisInfoFindRelatedInfoDeal(data: REDIS_API.RedisNodeInfoVo[]) {
+    nodeInfoData = data;
+    data.forEach(redisInfoFindRelatedInfoItem => {
+      if (redisInfoFindRelatedInfoItem?.id) {
+        return;
+      }
+
+      // @ts-ignore
+      redisInfoFindRelatedInfoItem.id = (redisInfoFindRelatedInfoItem?.host || "") + (redisInfoFindRelatedInfoItem?.port || "");
+    });
+    return data;
+  }
+
+  async function saveRedisNodeInfo() {
+    //存储逻辑
+    console.log(nodeInfoData);
+    return false;
   }
 
   const redisNodeInfoVoColumns: ProColumns<REDIS_API.RedisNodeInfoVo>[] = [
@@ -156,6 +179,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           defaultMessage="nodeId"
         />
       ),
+      copyable: true,
       dataIndex: 'nodeId',
       valueType: 'textarea',
     },
@@ -166,6 +190,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           defaultMessage="masterId"
         />
       ),
+      copyable: true,
       dataIndex: 'masterId',
       valueType: 'textarea',
     },
@@ -193,6 +218,21 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
     {
       title: (
         <FormattedMessage
+          id="redisManage.redisInfo.redisNodeInfoVo.slot"
+          defaultMessage="slot"
+        />
+      ),
+      dataIndex: 'slotFromAndSlotTo',
+      valueType: 'text',
+      render: (_, record) => (
+        <Card>
+          {record.slotFrom}-{record.slotTo}
+        </Card>
+      ),
+    },
+    {
+      title: (
+        <FormattedMessage
           id="redisManage.redisInfo.redisNodeInfoVo.nodeStatus"
           defaultMessage="nodeStatus"
         />
@@ -216,6 +256,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
         />
       ),
       hideInSearch: true,
+      hideInTable: true,
       dataIndex: 'updateTime',
       valueType: 'dateTime',
       // sorter: (a, b) => a.updateTime - b.updateTime,
@@ -428,7 +469,9 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           }) + "redis" + intl.formatMessage({
             id: 'relatedInformation',
             defaultMessage: ' related information',
-          })}>
+          })}
+                              onFinish={saveRedisNodeInfo}
+          >
             <ProTable<REDIS_API.RedisNodeInfoVo, REDIS_API.RedisInfoRelatedInfoRtDto>
               params={nodeInfoParams}
               pagination={{position: []}}
@@ -441,6 +484,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
               search={false}
               toolBarRender={false}
               request={redisInfoFindRelatedInfoRt}
+              postData={redisInfoFindRelatedInfoDeal}
               columns={redisNodeInfoVoColumns}
             />
 

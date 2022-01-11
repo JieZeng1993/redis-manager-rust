@@ -72,6 +72,8 @@ declare namespace REDIS_API {
     password?: string,
     ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
     clusterType?: string;
+    slotFrom?: number;
+    slotTo?: number;
     createTime?: string;
     createId?: number;
     updateTime?: number;

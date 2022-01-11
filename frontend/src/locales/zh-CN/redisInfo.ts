@@ -21,5 +21,6 @@ export default {
   "redisManage.redisInfo.redisNodeInfoVo.nodeRole.slave": "从",
   "redisManage.redisInfo.redisNodeInfoVo.nodeStatus": "状态",
   "redisManage.redisInfo.redisNodeInfoVo.nodeStatus.connected": "已连接",
+  "redisManage.redisInfo.redisNodeInfoVo.slot": "槽",
   "redisManage.redisInfo.modify.title": "redis信息",
 }
