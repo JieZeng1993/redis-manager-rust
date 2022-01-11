@@ -14,5 +14,12 @@ export default {
   "redisManage.redisInfo.redisInfoVo.updateTime": "更新时间",
   "redisManage.redisInfo.redisInfoVo.updateTimeRange": "更新时间范围",
   "redisManage.redisInfo.redisInfoVo.updateId": "更新人",
+  "redisManage.redisInfo.redisNodeInfoVo.nodeId": "nodeId",
+  "redisManage.redisInfo.redisNodeInfoVo.masterId": "masterId",
+  "redisManage.redisInfo.redisNodeInfoVo.nodeRole": "角色",
+  "redisManage.redisInfo.redisNodeInfoVo.nodeRole.master": "主",
+  "redisManage.redisInfo.redisNodeInfoVo.nodeRole.slave": "从",
+  "redisManage.redisInfo.redisNodeInfoVo.nodeStatus": "状态",
+  "redisManage.redisInfo.redisNodeInfoVo.nodeStatus.connected": "已连接",
   "redisManage.redisInfo.modify.title": "redis信息",
 }

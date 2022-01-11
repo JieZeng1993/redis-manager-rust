@@ -147,7 +147,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
         />
       ),
       dataIndex: 'port',
-      valueType: 'digit',
+      valueType: 'text',
     },
     {
       title: (
