@@ -201,6 +201,16 @@ impl RedisInfoService {
                         slot_to = Some(slot_from_and_slot_to[1].parse::<u16>().unwrap());
                     }
 
+                    let mut node_role = cluster_node_info[2].to_uppercase();
+                    let comma_in_node_role = node_role.find(",");
+                    if comma_in_node_role.is_some() {
+                        node_role = node_role.split_at(comma_in_node_role.unwrap() + 1).1.to_string();
+                    }
+                    if cluster_node_info.len() > 8 && cluster_node_info[8].contains("-") {
+                        let slot_from_and_slot_to: Vec<&str> = cluster_node_info[8].split("-").collect();
+                        slot_to = Some(slot_from_and_slot_to[1].parse::<u16>().unwrap());
+                    }
+
                     //转换
                     Some(RedisNodeInfoVo {
                         id: None,
@@ -209,7 +219,7 @@ impl RedisInfoService {
                         master_id: Some(master_id),
                         host,
                         port,
-                        node_role: Some(cluster_node_info[2].to_uppercase()),
+                        node_role: Some(node_role),
                         node_status: Some(cluster_node_info[7].to_uppercase()),
                         slot_from,
                         slot_to,

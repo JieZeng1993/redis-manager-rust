@@ -147,51 +147,66 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
         />
       ),
       dataIndex: 'port',
+      valueType: 'digit',
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisNodeInfoVo.nodeId"
+          defaultMessage="nodeId"
+        />
+      ),
+      dataIndex: 'nodeId',
       valueType: 'textarea',
     },
     {
       title: (
         <FormattedMessage
-          id="redisManage.redisInfo.redisInfoVo.clusterType"
-          defaultMessage="集群类型"
+          id="redisManage.redisInfo.redisNodeInfoVo.masterId"
+          defaultMessage="masterId"
         />
       ),
-      dataIndex: 'clusterType',
-      // STANDALONE，CLUSTER，SENTINEL
+      dataIndex: 'masterId',
+      valueType: 'textarea',
+    },
+    {
+      title: (
+        <FormattedMessage
+          id="redisManage.redisInfo.redisNodeInfoVo.nodeRole"
+          defaultMessage="nodeRole"
+        />
+      ),
+      dataIndex: 'nodeRole',
       valueEnum: {
-        "STANDALONE": {
+        "MASTER": {
           text: (
-            <FormattedMessage id="redisManage.redisInfo.redisInfoVo.clusterType.STANDALONE" defaultMessage="单机"/>
+            <FormattedMessage id="redisManage.redisInfo.redisNodeInfoVo.nodeRole.master" defaultMessage="MASTER"/>
           ),
-          status: '单机',
         },
-        "CLUSTER": {
+        "SLAVE": {
           text: (
-            <FormattedMessage id="redisManage.redisInfo.redisInfoVo.clusterType.CLUSTER" defaultMessage="集群"/>
+            <FormattedMessage id="redisManage.redisInfo.redisNodeInfoVo.nodeRole.slave" defaultMessage="SLAVE"/>
           ),
-          status: '集群',
-        },
-        "SENTINEL": {
-          text: (
-            <FormattedMessage id="redisManage.redisInfo.redisInfoVo.clusterType.SENTINEL" defaultMessage="哨兵"/>
-          ),
-          status: '哨兵',
         },
       },
     },
     {
       title: (
         <FormattedMessage
-          id="redisManage.redisInfo.redisInfoVo.updateTimeRange"
-          defaultMessage="更新时间范围"
+          id="redisManage.redisInfo.redisNodeInfoVo.nodeStatus"
+          defaultMessage="nodeStatus"
         />
       ),
-      dataIndex: 'updateTimeRange',
-      valueType: 'dateRange',
-      hideInTable: true,
-      //详情的时候不展示
-      hideInDescriptions: true,
-      // initialValue: [moment(), moment().add(1, 'day')],
+      dataIndex: 'nodeStatus',
+      valueEnum: {
+        "CONNECTED": {
+          text: (
+            <FormattedMessage id="redisManage.redisInfo.redisNodeInfoVo.nodeStatus.connected"
+                              defaultMessage="CONNECTED"/>
+          ),
+          status: 'CONNECTED',
+        },
+      },
     },
     {
       title: (
