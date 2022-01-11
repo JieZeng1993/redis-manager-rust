@@ -1,3 +1,5 @@
+#![feature(str_split_as_str)]
+
 pub mod service;
 pub mod domain;
 pub mod mapper;
