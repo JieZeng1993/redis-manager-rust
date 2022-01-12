@@ -141,7 +141,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   async function saveRedisNodeInfo() {
     //存储逻辑
     console.log(nodeInfoData);
-    return false;
+    return true;
   }
 
   function connectTest(redisNodeInfo: REDIS_API.RedisNodeInfoVo) {

@@ -42,6 +42,14 @@ impl RedisNodeInfoService {
         return Ok(SERVICE_CONTEXT.rbatis.fetch_list_by_wrapper(wrapper).await?);
     }
 
+    /// * `redis_info_id`
+    /// * `redis_node_infos` 最新的相关信息
+    /// 根据redis_info_id查出数据库中的数据，对比redis_node_infos，进行增加、更新、删除动作
+    pub async fn update_by_redis_info_id(&self, redis_info_id: i32, redis_node_infos: Vec<RedisNodeInfo>) -> Result<Vec<RedisNodeInfo>> {
+        let redis_node_infos_in_db = self.do_find_by_redis_info_id(redis_info_id).await?;
+        return Ok(SERVICE_CONTEXT.rbatis.fetch_list_by_wrapper(wrapper).await?);
+    }
+
     // ///后台用户根据name查找
     // pub async fn login(&self, name: &String, password: &String) -> Result<Option<LoginVo>> {
     //     let user = self.do_find_by_name(name).await?;
