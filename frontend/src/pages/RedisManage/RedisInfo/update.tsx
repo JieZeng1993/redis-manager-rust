@@ -225,9 +225,9 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
       dataIndex: 'slotFromAndSlotTo',
       valueType: 'text',
       render: (_, record) => (
-        <Card>
+        <span>
           {record.slotFrom}-{record.slotTo}
-        </Card>
+        </span>
       ),
     },
     {
