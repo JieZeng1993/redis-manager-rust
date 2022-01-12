@@ -121,14 +121,22 @@ export const request: RequestConfig = {
   middlewares: [
     async function middlewareA(ctx: any, next: () => any) {
       const authorization = localStorage.getItem("authorization");
+      const {req} = ctx;
+      const {options} = req;
       if (authorization) {
-        const {req} = ctx;
-        const {options} = req;
         options.headers = {
           ...options.headers,
           authorization: authorization
         }
       }
+
+      if (!options.headers["Content-Type"]) {
+        options.headers = {
+          ...options.headers,
+          'Content-Type': 'application/json'
+        }
+      }
+
       await next();
     },
   ],

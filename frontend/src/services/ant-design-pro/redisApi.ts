@@ -48,7 +48,7 @@ export async function redisInfoFindBy(params: REDIS_API.RedisInfoVo, props: any)
 }
 
 /** 实时节点相关信息 POST /api/redisInfo/relatedInfo */
-export async function redisInfoFindRelatedInfoRt(body: REDIS_API.RedisInfoRelatedInfoRtDto, options?: { [key: string]: any }) {
+export async function redisInfoFindRelatedInfoRt(body: REDIS_API.RedisConnectDto, options?: { [key: string]: any }) {
   if (body.request) {
     return request<Response<REDIS_API.RedisNodeInfoVo[]>>(`/api/redisInfo/relatedInfoRt`, {
       method: 'POST',
@@ -65,6 +65,19 @@ export async function redisInfoFindRelatedInfoRt(body: REDIS_API.RedisInfoRelate
   }
 }
 
+
+/** 实时节点相关信息 POST /api/redisInfo/connectTest */
+export async function requestConnectTest(body: REDIS_API.RedisConnectDto, options?: { [key: string]: any }) {
+  if (body.request) {
+    return request<Response<string>>(`/api/redisInfo/connectTest`, {
+      method: 'POST',
+      data: body,
+      ...(options || {}),
+    });
+  } else {
+    return {success: true, data: "connected"};
+  }
+}
 
 // /** 获取当前的用户 GET /api/currentUser */
 // export async function currentUser(options?: { [key: string]: any }) {

@@ -5,7 +5,7 @@ import {PageContainer} from '@ant-design/pro-layout';
 import ProForm, {ProFormDigit, ProFormText, StepsForm} from '@ant-design/pro-form';
 import styles from './style.less';
 import {history, useIntl, useParams} from 'umi';
-import {redisInfoFindBy, redisInfoFindRelatedInfoRt} from "@/services/ant-design-pro/redisApi";
+import {redisInfoFindBy, redisInfoFindRelatedInfoRt, requestConnectTest} from "@/services/ant-design-pro/redisApi";
 import type {ProColumns} from "@ant-design/pro-table";
 import ProTable from "@ant-design/pro-table";
 import {FormattedMessage} from "@@/plugin-locale/localeExports";
@@ -89,7 +89,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   const infoParams = {id: id};
 
   const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
-  const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisInfoRelatedInfoRtDto>();
+  const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisConnectDto>();
 
   //保存最新的值，方便保存使用
   let nodeInfoData: REDIS_API.RedisNodeInfoVo[] = [];
@@ -142,6 +142,29 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
     //存储逻辑
     console.log(nodeInfoData);
     return false;
+  }
+
+  function connectTest(redisNodeInfo: REDIS_API.RedisNodeInfoVo) {
+    if (redisNodeInfo.connecting) {
+      return;
+    }
+    redisNodeInfo.connecting = true;
+
+    const request: REDIS_API.RedisConnectDto = {
+      id: stepData?.id,
+      host: redisNodeInfo.host,
+      port: redisNodeInfo.port,
+      username: stepData?.username,
+      password: stepData?.password,
+      request: true,
+    }
+
+    requestConnectTest(request).then((result) => {
+      //存储逻辑
+      console.log(JSON.stringify(result));
+    }).finally(() => {
+      redisNodeInfo.connecting = false;
+    })
   }
 
   const redisNodeInfoVoColumns: ProColumns<REDIS_API.RedisNodeInfoVo>[] = [
@@ -279,15 +302,17 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
       title: <FormattedMessage id="operate" defaultMessage="operate"/>,
       valueType: 'option',
       render: (_, record) => [
-        <a
-          key="config"
+        <Button
+          type={'link'}
+          key="redisConnectTestButton"
+          loading={record.connecting}
           onClick={() => {
-            console.log("redis connect 测试" + JSON.stringify(record));
+            connectTest(record)
           }}
         >
           <FormattedMessage id="connection" defaultMessage="connection"/>
           <FormattedMessage id="test" defaultMessage="test"/>
-        </a>,
+        </Button>,
         // <a key="subscribeAlert" href="https://procomponents.ant.design/">
         //   <FormattedMessage
         //     id="pages.searchTable.subscribeAlert"
@@ -472,7 +497,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
           })}
                               onFinish={saveRedisNodeInfo}
           >
-            <ProTable<REDIS_API.RedisNodeInfoVo, REDIS_API.RedisInfoRelatedInfoRtDto>
+            <ProTable<REDIS_API.RedisNodeInfoVo, REDIS_API.RedisConnectDto>
               params={nodeInfoParams}
               pagination={{position: []}}
               headerTitle={intl.formatMessage({

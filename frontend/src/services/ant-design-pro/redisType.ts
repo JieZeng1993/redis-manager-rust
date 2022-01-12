@@ -27,7 +27,7 @@ declare namespace REDIS_API {
   };
 
   //实时查询节点相关信息请求
-  type RedisInfoRelatedInfoRtDto = {
+  type RedisConnectDto = {
     id?: number;
     //name校验重复（校验时，如果）
     name?: string;
@@ -78,5 +78,6 @@ declare namespace REDIS_API {
     createId?: number;
     updateTime?: number;
     updateId?: number;
+    connecting: boolean
   }
 }

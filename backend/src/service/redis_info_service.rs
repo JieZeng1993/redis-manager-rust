@@ -10,7 +10,7 @@ use redis::{AsyncCommands, ErrorKind, RedisFuture, RedisResult};
 
 use crate::config::auth;
 use crate::domain::dto::{convert_rbatis_page_request, convert_rbatis_page_resp_and_convert};
-use crate::domain::dto::redis_info::{RedisInfoRelatedInfoRtDto, RedisPageDto};
+use crate::domain::dto::redis_info::{RedisConnectDto, RedisPageDto};
 use crate::domain::dto::user1::User1UpdateDto;
 use crate::domain::dto::user::UserUpdateDto;
 use crate::domain::entity::redis_info::*;
@@ -71,15 +71,95 @@ impl RedisInfoService {
         return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 
+    //连接测试
+    pub async fn connect_test(&self, mut redis_connect_dto: RedisConnectDto) -> Result<String> {
+        self.get_connection(&mut redis_connect_dto).await?;
+        Ok("connected".to_string())
+    }
+
     ///实时查询节点相关信息
-    pub async fn related_info_rt(&self, redis_info_related_info_rt_dto: RedisInfoRelatedInfoRtDto) -> Result<Vec<RedisNodeInfoVo>> {
-        let mut username = redis_info_related_info_rt_dto.username;
-        let mut password = redis_info_related_info_rt_dto.password;
+    pub async fn related_info_rt(&self, mut redis_connect_dto: RedisConnectDto) -> Result<Vec<RedisNodeInfoVo>> {
+        let mut connection = self.get_connection(&mut redis_connect_dto).await?;
+        //连接没有问题
+        //查询集群信息
+        let cluster_nodes: RedisResult<String> = redis::cmd("cluster").arg("nodes").query_async(&mut connection).await;
+
+        let cluster_nodes_ref = cluster_nodes.as_ref();
+        if cluster_nodes_ref.is_err() && cluster_nodes_ref.err().unwrap().detail().unwrap_or("").contains("cluster support disabled") {
+            //单节点，这是正常的响应
+            return Ok(vec![RedisNodeInfoVo {
+                id: redis_connect_dto.id,
+                redis_info_id: None,
+                //单机，没有这个属性
+                node_id: Some("master_id".to_string()),
+                //单机，没有这个属性
+                master_id: Some("master_id".to_string()),
+                host: redis_connect_dto.host,
+                port: redis_connect_dto.port,
+                node_role: Some("MASTER".to_string()),
+                node_status: Some("CONNECTED".to_string()),
+                //有所有的槽位
+                slot_from: Some(0),
+                slot_to: Some(16383),
+                create_time: None,
+                create_id: None,
+                update_time: None,
+                update_id: None,
+            }]);
+        }
+        log!(Level::Info,"cluster_nodes:{:?}",cluster_nodes);
+        //只需要处理哨兵和cluster，目前只处理cluster
+        let cluster_nodes = deal_redis_result(cluster_nodes)?;
+
+        let cluster_nodes: Vec<RedisNodeInfoVo> = cluster_nodes.split("\n").into_iter().filter_map(convert_str2redis_node_info).collect();
+        return Ok(cluster_nodes);
+    }
+
+    async fn get_connection(&self, redis_connect_dto: &mut RedisConnectDto) -> Result<redis::aio::MultiplexedConnection> {
+        self.deal_redis_info_related_info_rt_dto(redis_connect_dto).await?;
+        let mut client = redis::Client::open(redis::ConnectionInfo {
+            addr: redis::ConnectionAddr::Tcp(redis_connect_dto.host.clone().unwrap(), redis_connect_dto.port.unwrap()),
+            redis: redis::RedisConnectionInfo {
+                db: 0,
+                username: redis_connect_dto.username.clone(),
+                password: redis_connect_dto.password.clone(),
+            },
+        }).unwrap();
+
+        let mut connection = get_conn(client).await?;
+
+        self.check_redis_connection(&mut connection).await?;
+
+        Ok(connection)
+    }
+
+    /// 检查连接,主要是针对没有密码的，测试一下
+    async fn check_redis_connection(&self, connection: &mut redis::aio::MultiplexedConnection) -> Result<String> {
+        //主要是测试密码是否正确
+        let result: RedisResult<String> = connection.get("TEST-CONNECTION").await;
+
+        if let Err(result) = result {
+            match result.kind() {
+                //鉴权失败
+                redis::ErrorKind::AuthenticationFailed => { return Err(crate::mix::error::Error::from("redisInfo.connection.error.authFail")); }
+                //连接异常
+                redis::ErrorKind::IoError => { return Err(crate::mix::error::Error::from("redisInfo.connection.error.connection")); }
+                _ => {}
+            }
+        }
+
+        Ok("".to_string())
+    }
+
+    /// * `redis_connect_dto` 外部传入的请求，如果请求没有携带username和password，就用数据库中的，但是会无法处理，之前有密码，后来没密码这种情况
+    async fn deal_redis_info_related_info_rt_dto(&self, redis_connect_dto: &mut RedisConnectDto) -> Result<String> {
+        let mut username = redis_connect_dto.username.clone();
+        let mut password = redis_connect_dto.password.clone();
         let mut old_username = None;
         let mut old_password = None;
 
-        if redis_info_related_info_rt_dto.id.is_some() {
-            let redis_info_option = self.do_find_by_id(redis_info_related_info_rt_dto.id.unwrap()).await?;
+        if redis_connect_dto.id.is_some() {
+            let redis_info_option = self.do_find_by_id(redis_connect_dto.id.unwrap()).await?;
             if redis_info_option.is_some() {
                 let redis_info = redis_info_option.unwrap();
                 old_username = redis_info.username;
@@ -106,132 +186,11 @@ impl RedisInfoService {
                 password = old_password;
             }
         }
-        log!(Level::Info, "username:{:?}, password:{:?}",username,password);
-        let mut client = redis::Client::open(redis::ConnectionInfo {
-            addr: redis::ConnectionAddr::Tcp(redis_info_related_info_rt_dto.host.clone().unwrap(), redis_info_related_info_rt_dto.port.unwrap()),
-            redis: redis::RedisConnectionInfo {
-                db: 0,
-                username,
-                password,
-            },
-        }).unwrap();
 
-        let mut connection = get_conn(client).await?;
-        //主要是测试密码是否正确
-        let result: RedisResult<String> = connection.get("TEST-CONNECTION").await;
+        redis_connect_dto.username = username;
+        redis_connect_dto.password = password;
 
-        match result {
-            Err(result) => {
-                match result.kind() {
-                    redis::ErrorKind::AuthenticationFailed => { return Err(crate::mix::error::Error::from("redisInfo.connection.error.authFail")); }
-                    redis::ErrorKind::IoError => { return Err(crate::mix::error::Error::from("redisInfo.connection.error.connection")); }
-                    _ => {}
-                }
-            }
-            _ => {}
-        }
-
-        //连接没有问题
-        //查询集群信息
-        let cluster_nodes: RedisResult<String> = redis::cmd("cluster").arg("nodes").query_async(&mut connection).await;
-
-        let cluster_nodes_ref = cluster_nodes.as_ref();
-        if cluster_nodes_ref.is_err() && cluster_nodes_ref.err().unwrap().detail().unwrap_or("").contains("cluster support disabled") {
-            //单节点，这是正常的响应
-            return Ok(vec![RedisNodeInfoVo {
-                id: redis_info_related_info_rt_dto.id,
-                redis_info_id: None,
-                //单机，没有这个属性
-                node_id: Some("master_id".to_string()),
-                //单机，没有这个属性
-                master_id: Some("master_id".to_string()),
-                host: redis_info_related_info_rt_dto.host,
-                port: redis_info_related_info_rt_dto.port,
-                node_role: Some("MASTER".to_string()),
-                node_status: Some("CONNECTED".to_string()),
-                //总共1
-                slot_from: Some(0),
-                slot_to: Some(16383),
-                create_time: None,
-                create_id: None,
-                update_time: None,
-                update_id: None,
-            }]);
-        }
-        //单节点
-        let cluster_nodes = deal_redis_result(cluster_nodes)?;
-
-        //只需要处理哨兵和cluster，目前只处理cluster
-        log!(Level::Info,"cluster_nodes:{}",cluster_nodes);
-        let cluster_nodes: Vec<RedisNodeInfoVo> = cluster_nodes.split("\n").into_iter().filter_map(|cluster_node_info|
-            {
-                let cluster_node_info = cluster_node_info.split_ascii_whitespace().collect_vec();
-
-                if cluster_node_info.is_empty() {
-                    return None;
-                } else {
-                    let mut host = None;
-                    let mut port = None;
-                    // ["c286a761c3c4c69465503713af358058cef8011a", "172.29.43.202:6374@16374", "slave", "e9cfadca9f063284a13494ff3a10809dd2144d6b", "0", "1641902794546", "3", "connected"]
-                    // ["e9cfadca9f063284a13494ff3a10809dd2144d6b", "172.29.43.202:6373@16373", "master", "-", "0", "1641902796000", "3", "connected", "10923-16383"]
-                    let connect_info = cluster_node_info[1];
-                    match connect_info.split_once(":") {
-                        Some(connect_info) => {
-                            host = Some(connect_info.0.to_string());
-                            match connect_info.1.split_once("@") {
-                                Some(port_info) => {
-                                    port = Some(port_info.0.parse::<u16>().unwrap())
-                                }
-                                _ => {}
-                            }
-                        }
-                        _ => {}
-                    }
-
-                    let master_id = match cluster_node_info[3].eq("-") {
-                        true => { "".to_string() }
-                        false => { cluster_node_info[3].to_string() }
-                    };
-
-                    let mut slot_from = None;
-                    let mut slot_to = None;
-                    if cluster_node_info.len() > 8 && cluster_node_info[8].contains("-") {
-                        let slot_from_and_slot_to: Vec<&str> = cluster_node_info[8].split("-").collect();
-                        slot_from = Some(slot_from_and_slot_to[0].parse::<u16>().unwrap());
-                        slot_to = Some(slot_from_and_slot_to[1].parse::<u16>().unwrap());
-                    }
-
-                    let mut node_role = cluster_node_info[2].to_uppercase();
-                    let comma_in_node_role = node_role.find(",");
-                    if comma_in_node_role.is_some() {
-                        node_role = node_role.split_at(comma_in_node_role.unwrap() + 1).1.to_string();
-                    }
-                    if cluster_node_info.len() > 8 && cluster_node_info[8].contains("-") {
-                        let slot_from_and_slot_to: Vec<&str> = cluster_node_info[8].split("-").collect();
-                        slot_to = Some(slot_from_and_slot_to[1].parse::<u16>().unwrap());
-                    }
-
-                    //转换
-                    Some(RedisNodeInfoVo {
-                        id: None,
-                        redis_info_id: None,
-                        node_id: Some(cluster_node_info[0].to_string()),
-                        master_id: Some(master_id),
-                        host,
-                        port,
-                        node_role: Some(node_role),
-                        node_status: Some(cluster_node_info[7].to_uppercase()),
-                        slot_from,
-                        slot_to,
-                        create_time: None,
-                        create_id: None,
-                        update_time: None,
-                        update_id: None,
-                    })
-                }
-            }
-        ).collect();
-        return Ok(cluster_nodes);
+        Ok("".to_string())
     }
 }
 
@@ -262,7 +221,6 @@ pub fn deal_redis_result<T>(result: RedisResult<T>) -> Result<T> {
         _ => { return Err(crate::mix::error::Error::from("redisInfo.connection.error")); }
     }
 
-
     Err(crate::mix::error::Error::from(format!("redisInfo.connection.error.connection.{}", code)))
 }
 
@@ -283,8 +241,82 @@ pub async fn get_conn(client: redis::Client) -> Result<redis::aio::MultiplexedCo
     }
 }
 
-// let test_result = connection.get("1");
-// log!(Level::Error,"RedisService connect test_result:{:?}", test_result);
+
+/// 解析如下格式
+///  ["c286a761c3c4c69465503713af358058cef8011a", "172.29.43.202:6374@16374", "slave", "e9cfadca9f063284a13494ff3a10809dd2144d6b", "0", "1641902794546", "3", "connected"]
+///  ["e9cfadca9f063284a13494ff3a10809dd2144d6b", "172.29.43.202:6373@16373", "master", "-", "0", "1641902796000", "3", "connected", "10923-16383"]
+pub fn convert_str2redis_node_info(cluster_node_info: &str) -> Option<RedisNodeInfoVo> {
+    let cluster_node_info = cluster_node_info.split_ascii_whitespace().collect_vec();
+
+    if cluster_node_info.is_empty() {
+        return None;
+    } else {
+        let mut host = None;
+        let mut port = None;
+
+        if cluster_node_info.len() < 8 {
+            log!(Level::Error, "error node info:{:?}",cluster_node_info);
+            return None;
+        }
+
+        let connect_info = cluster_node_info[1];
+
+        if let Some(connect_info) = connect_info.split_once(":") {
+            host = Some(connect_info.0.to_string());
+            if let Some(port_info) = connect_info.1.split_once("@") {
+                port = Some(port_info.0.parse::<u16>().unwrap())
+            } else {
+                log!(Level::Error, "node info:{:?}, error port info:{:?}",cluster_node_info,  connect_info.1);
+                return None;
+            }
+        } else {
+            log!(Level::Error, "node info:{:?}, error connect info:{:?}",cluster_node_info, connect_info);
+            return None;
+        }
+
+        let master_id = match cluster_node_info[3].eq("-") {
+            true => { "".to_string() }
+            false => { cluster_node_info[3].to_string() }
+        };
+
+        let mut slot_from = None;
+        let mut slot_to = None;
+        if cluster_node_info.len() > 8 && cluster_node_info[8].contains("-") {
+            let slot_from_and_slot_to: Vec<&str> = cluster_node_info[8].split("-").collect();
+            slot_from = Some(slot_from_and_slot_to[0].parse::<u16>().unwrap());
+            slot_to = Some(slot_from_and_slot_to[1].parse::<u16>().unwrap());
+        }
+
+        let mut node_role = cluster_node_info[2].to_uppercase();
+        let comma_in_node_role = node_role.find(",");
+        if comma_in_node_role.is_some() {
+            let node_role_tuple = node_role.split_at(comma_in_node_role.unwrap() + 1);
+            if node_role_tuple.0.eq("SELF") {
+                node_role = node_role_tuple.1.to_string();
+            } else {
+                node_role = node_role_tuple.0.to_string();
+            }
+        }
+
+        //转换
+        Some(RedisNodeInfoVo {
+            id: None,
+            redis_info_id: None,
+            node_id: Some(cluster_node_info[0].to_string()),
+            master_id: Some(master_id),
+            host,
+            port,
+            node_role: Some(node_role),
+            node_status: Some(cluster_node_info[7].to_uppercase()),
+            slot_from,
+            slot_to,
+            create_time: None,
+            create_id: None,
+            update_time: None,
+            update_id: None,
+        })
+    }
+}
 
 
 mod test {
