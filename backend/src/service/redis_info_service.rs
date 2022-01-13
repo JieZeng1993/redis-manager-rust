@@ -119,12 +119,13 @@ impl RedisInfoService {
                                                                                                           node_status: related_info.node_status,
                                                                                                           slot_from: related_info.slot_from,
                                                                                                           slot_to: related_info.slot_to,
-                                                                                                          create_time: None,
-                                                                                                          create_id: None,
+                                                                                                          create_time: Some(DateTimeNative::now()),
+                                                                                                          create_id: session.id,
                                                                                                           update_time: Some(DateTimeNative::now()),
                                                                                                           update_id: session.id,
                                                                                                       }).collect()).await;
         if let Err(error) = update_node_info_result {
+            log!(Level::Error,"update data fail {}", error);
             tx.rollback().await?;
             return Err(crate::mix::error::Error::from("db.update.fail"));
         }
@@ -135,7 +136,7 @@ impl RedisInfoService {
 
     //连接测试
     pub async fn connect_test(&self, mut redis_connect_dto: RedisConnectDto) -> Result<String> {
-        self.deal_redis_info_related_info_rt_dto(redis_connect_dto, None).await?;
+        self.deal_redis_info_related_info_rt_dto(&mut redis_connect_dto, None).await?;
         self.get_connection(&mut redis_connect_dto).await?;
         Ok("connected".to_string())
     }
@@ -164,7 +165,7 @@ impl RedisInfoService {
                 node_id: Some("master_id".to_string()),
                 //单机，没有这个属性
                 master_id: Some("master_id".to_string()),
-                host: redis_connect_dto.host,
+                host: redis_connect_dto.host.clone(),
                 port: redis_connect_dto.port,
                 node_role: Some("MASTER".to_string()),
                 node_status: Some("CONNECTED".to_string()),
@@ -188,7 +189,7 @@ impl RedisInfoService {
     }
 
     pub async fn related_info_rt(&self, mut redis_connect_dto: RedisConnectDto) -> Result<Vec<RedisNodeInfoVo>> {
-        self.related_info_rt_inner(redis_connect_dto, None)
+        self.related_info_rt_inner(&mut redis_connect_dto, None).await
     }
 
     async fn get_connection(&self, redis_connect_dto: &mut RedisConnectDto) -> Result<redis::aio::MultiplexedConnection> {
@@ -236,6 +237,7 @@ impl RedisInfoService {
 
         if redis_connect_dto.id.is_some() {
             if redis_info.is_some() {
+                let redis_info = redis_info.unwrap();
                 old_username = redis_info.username;
                 old_password = redis_info.password;
             } else {
