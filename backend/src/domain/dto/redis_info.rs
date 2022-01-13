@@ -68,4 +68,6 @@ pub struct RedisConnectDto {
     pub username: Option<String>,
     ///密码（空表示无密码）
     pub password: Option<String>,
+    ///redis的集群类型，STANDALONE，CLUSTER，SENTINEL
+    pub cluster_type: Option<String>,
 }

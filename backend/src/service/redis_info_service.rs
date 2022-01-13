@@ -85,7 +85,7 @@ impl RedisInfoService {
         }
 
         //获取相关节点信息
-        let related_infos = self.related_info_rt_inner(redis_connect_dto, redis_info_option).await?;
+        let related_infos = self.related_info_rt_inner(&mut redis_connect_dto, redis_info_option).await?;
         let redis_info = RedisInfo {
             id: redis_connect_dto.id,
             name: redis_connect_dto.name,
@@ -145,8 +145,8 @@ impl RedisInfoService {
     /// 2.建立client，建立conncetion
     /// 3.校验connection（如果未配置密码，但是连接无效（其实有密码时））
     /// 4.执行cluster nodes命令，如果返回的信息包含字符串 cluster support disabled ，表示单节点为
-    async fn related_info_rt_inner(&self, mut redis_connect_dto: RedisConnectDto, redis_info: Option<RedisInfo>) -> Result<Vec<RedisNodeInfoVo>> {
-        self.deal_redis_info_related_info_rt_dto(redis_connect_dto, redis_info).await?;
+    async fn related_info_rt_inner(&self, redis_connect_dto: &mut RedisConnectDto, redis_info: Option<RedisInfo>) -> Result<Vec<RedisNodeInfoVo>> {
+        self.deal_redis_info_related_info_rt_dto(&mut redis_connect_dto, redis_info).await?;
         let mut connection = self.get_connection(&mut redis_connect_dto).await?;
         //连接没有问题
         //查询集群信息
@@ -155,7 +155,7 @@ impl RedisInfoService {
         let cluster_nodes_ref = cluster_nodes.as_ref();
         if cluster_nodes_ref.is_err() && cluster_nodes_ref.err().unwrap().detail().unwrap_or("").contains("cluster support disabled") {
             //修改集群的类型为单节点
-            redis_connect_dto.cluster_type: Option<String> = ClusterType::STANDALONE.into();
+            redis_connect_dto.cluster_type = ClusterType::STANDALONE.into();
             //单节点，这是正常的响应
             return Ok(vec![RedisNodeInfoVo {
                 id: redis_connect_dto.id,
