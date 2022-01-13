@@ -6,7 +6,7 @@ use poem_openapi::{
 };
 
 use crate::config::auth::Session;
-use crate::domain::dto::redis_info::{RedisInfoRelatedInfoRtDto, RedisPageDto};
+use crate::domain::dto::redis_info::{RedisConnectDto, RedisPageDto};
 use crate::domain::vo::redis_info::RedisInfoVo;
 use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 use crate::domain::vo::RespVO;
@@ -54,6 +54,15 @@ enum RedisInfoRelatedInfoRtResponse {
 }
 
 #[derive(ApiResponse)]
+enum RedisConnectTestResponse {
+    /// Return the redis info.
+    #[oai(status = 200)]
+    Ok(Json<RespVO<String>>),
+    #[oai(status = 500)]
+    InnerError,
+}
+
+#[derive(ApiResponse)]
 enum UpdateUserResponse {
     /// Return the redis info.
     #[oai(status = 200)]
@@ -86,10 +95,20 @@ impl RedisInfoRest {
         }
     }
 
+    ///连接测试
+    #[oai(path = "/redisInfo/connectTest", method = "post", tag = "ApiTags::RedisInfo")]
+    async fn connect_test(&self, redis_connect_dto: Json<RedisConnectDto>) -> RedisConnectTestResponse {
+        let connect_result = SERVICE_CONTEXT.redis_info_service.connect_test(redis_connect_dto.0).await;
+        match connect_result {
+            Ok(redis_node_info_vo) => RedisConnectTestResponse::Ok(Json(RespVO::from(&redis_node_info_vo))),
+            Err(error) => RedisConnectTestResponse::Ok(Json(RespVO::from_error_code(error)))
+        }
+    }
+
     ///实时查询节点相关信息
     #[oai(path = "/redisInfo/relatedInfoRt", method = "post", tag = "ApiTags::RedisInfo")]
-    async fn related_info_rt(&self, redis_info_related_info_rt_dto: Json<RedisInfoRelatedInfoRtDto>) -> RedisInfoRelatedInfoRtResponse {
-        let redis_node_info_vo = SERVICE_CONTEXT.redis_info_service.related_info_rt(redis_info_related_info_rt_dto.0).await;
+    async fn related_info_rt(&self, redis_connect_dto: Json<RedisConnectDto>) -> RedisInfoRelatedInfoRtResponse {
+        let redis_node_info_vo = SERVICE_CONTEXT.redis_info_service.related_info_rt(redis_connect_dto.0).await;
         match redis_node_info_vo {
             Ok(redis_node_info_vo) => RedisInfoRelatedInfoRtResponse::Ok(Json(RespVO::from(&redis_node_info_vo))),
             Err(error) => RedisInfoRelatedInfoRtResponse::Ok(Json(RespVO::from_error_code(error)))

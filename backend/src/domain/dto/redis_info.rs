@@ -52,11 +52,11 @@ impl IPageRequest for RedisPageDto {
 //     }
 // }
 
-///实时查询节点相关信息请求
+///redis节点连接相关信息请求
 #[derive(Debug, Object, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[oai(inline, rename_all = "camelCase")]
-pub struct RedisInfoRelatedInfoRtDto {
+pub struct RedisConnectDto {
     pub id: Option<i32>,
     ///name校验重复（校验时，如果）
     pub name: Option<String>,
