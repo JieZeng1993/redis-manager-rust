@@ -7,6 +7,7 @@ pub mod config;
 pub mod mix;
 pub mod rest;
 pub mod util;
+pub mod enums;
 
 #[macro_use]
 extern crate rbatis;

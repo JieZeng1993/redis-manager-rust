@@ -9,14 +9,17 @@ use rbatis::plugin::page::{Page, PageRequest};
 use redis::{AsyncCommands, ErrorKind, RedisFuture, RedisResult};
 
 use crate::config::auth;
+use crate::config::auth::Session;
 use crate::domain::dto::{convert_rbatis_page_request, convert_rbatis_page_resp_and_convert};
 use crate::domain::dto::redis_info::{RedisConnectDto, RedisPageDto};
 use crate::domain::dto::user1::User1UpdateDto;
 use crate::domain::dto::user::UserUpdateDto;
 use crate::domain::entity::redis_info::*;
+use crate::domain::entity::redis_node_info::RedisNodeInfo;
 use crate::domain::vo::redis_info::*;
 use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
 use crate::domain::vo::RespVO;
+use crate::enums::ClusterType;
 use crate::mix::error::Result;
 use crate::service::SERVICE_CONTEXT;
 use crate::util::string::IsEmpty;
@@ -71,14 +74,79 @@ impl RedisInfoService {
         return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 
+    ///通过连接信息信息，进行更新
+    pub async fn update_by_connect(&self, mut redis_connect_dto: RedisConnectDto, session: &Session) -> Result<String> {
+        if redis_connect_dto.id.is_none() {
+            return Err(crate::mix::error::Error::from("redisInfo.update.id.notExist"));
+        }
+        let redis_info_option = self.do_find_by_id(redis_connect_dto.id.unwrap()).await?;
+        if redis_info_option.is_none() {
+            return Err(crate::mix::error::Error::from("redisInfo.record.notFind"));
+        }
+
+        //获取相关节点信息
+        let related_infos = self.related_info_rt_inner(redis_connect_dto, redis_info_option).await?;
+        let redis_info = RedisInfo {
+            id: redis_connect_dto.id,
+            name: redis_connect_dto.name,
+            host: redis_connect_dto.host,
+            port: redis_connect_dto.port,
+            username: redis_connect_dto.username,
+            password: redis_connect_dto.password,
+            cluster_type: redis_connect_dto.cluster_type,
+            create_time: None,
+            create_id: None,
+            update_time: Some(DateTimeNative::now()),
+            update_id: session.id,
+        };
+
+        let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
+
+        if let Err(error) = SERVICE_CONTEXT.rbatis.save(&redis_info, &[]).await {
+            tx.rollback().await?;
+            return Err(crate::mix::error::Error::from("db.insert.fail"));
+        }
+
+        let update_node_info_result = SERVICE_CONTEXT.redis_node_info_service.update_by_redis_info_id(redis_info.id.unwrap(),
+                                                                                                      related_infos.into_iter().map(|related_info| RedisNodeInfo {
+                                                                                                          id: None,
+                                                                                                          redis_info_id: None,
+                                                                                                          node_id: related_info.node_id,
+                                                                                                          master_id: related_info.master_id,
+                                                                                                          host: related_info.host,
+                                                                                                          port: related_info.port,
+                                                                                                          node_role: related_info.node_role,
+                                                                                                          node_status: related_info.node_status,
+                                                                                                          slot_from: related_info.slot_from,
+                                                                                                          slot_to: related_info.slot_to,
+                                                                                                          create_time: None,
+                                                                                                          create_id: None,
+                                                                                                          update_time: Some(DateTimeNative::now()),
+                                                                                                          update_id: session.id,
+                                                                                                      }).collect()).await;
+        if let Err(error) = update_node_info_result {
+            tx.rollback().await?;
+            return Err(crate::mix::error::Error::from("db.update.fail"));
+        }
+
+        tx.commit().await?;
+        return Ok("operateSuccess".to_string());
+    }
+
     //连接测试
     pub async fn connect_test(&self, mut redis_connect_dto: RedisConnectDto) -> Result<String> {
+        self.deal_redis_info_related_info_rt_dto(redis_connect_dto, None).await?;
         self.get_connection(&mut redis_connect_dto).await?;
         Ok("connected".to_string())
     }
 
     ///实时查询节点相关信息
-    pub async fn related_info_rt(&self, mut redis_connect_dto: RedisConnectDto) -> Result<Vec<RedisNodeInfoVo>> {
+    /// 1.设置username，passoword信息
+    /// 2.建立client，建立conncetion
+    /// 3.校验connection（如果未配置密码，但是连接无效（其实有密码时））
+    /// 4.执行cluster nodes命令，如果返回的信息包含字符串 cluster support disabled ，表示单节点为
+    async fn related_info_rt_inner(&self, mut redis_connect_dto: RedisConnectDto, redis_info: Option<RedisInfo>) -> Result<Vec<RedisNodeInfoVo>> {
+        self.deal_redis_info_related_info_rt_dto(redis_connect_dto, redis_info).await?;
         let mut connection = self.get_connection(&mut redis_connect_dto).await?;
         //连接没有问题
         //查询集群信息
@@ -86,6 +154,8 @@ impl RedisInfoService {
 
         let cluster_nodes_ref = cluster_nodes.as_ref();
         if cluster_nodes_ref.is_err() && cluster_nodes_ref.err().unwrap().detail().unwrap_or("").contains("cluster support disabled") {
+            //修改集群的类型为单节点
+            redis_connect_dto.cluster_type: Option<String> = ClusterType::STANDALONE.into();
             //单节点，这是正常的响应
             return Ok(vec![RedisNodeInfoVo {
                 id: redis_connect_dto.id,
@@ -107,6 +177,8 @@ impl RedisInfoService {
                 update_id: None,
             }]);
         }
+
+        redis_connect_dto.cluster_type: Option<String> = ClusterType::CLUSTER.into();
         log!(Level::Info,"cluster_nodes:{:?}",cluster_nodes);
         //只需要处理哨兵和cluster，目前只处理cluster
         let cluster_nodes = deal_redis_result(cluster_nodes)?;
@@ -115,8 +187,11 @@ impl RedisInfoService {
         return Ok(cluster_nodes);
     }
 
+    pub async fn related_info_rt(&self, mut redis_connect_dto: RedisConnectDto) -> Result<Vec<RedisNodeInfoVo>> {
+        self.related_info_rt_inner(redis_connect_dto, None)
+    }
+
     async fn get_connection(&self, redis_connect_dto: &mut RedisConnectDto) -> Result<redis::aio::MultiplexedConnection> {
-        self.deal_redis_info_related_info_rt_dto(redis_connect_dto).await?;
         let mut client = redis::Client::open(redis::ConnectionInfo {
             addr: redis::ConnectionAddr::Tcp(redis_connect_dto.host.clone().unwrap(), redis_connect_dto.port.unwrap()),
             redis: redis::RedisConnectionInfo {
@@ -152,18 +227,26 @@ impl RedisInfoService {
     }
 
     /// * `redis_connect_dto` 外部传入的请求，如果请求没有携带username和password，就用数据库中的，但是会无法处理，之前有密码，后来没密码这种情况
-    async fn deal_redis_info_related_info_rt_dto(&self, redis_connect_dto: &mut RedisConnectDto) -> Result<String> {
+    /// * `redis_info` 传入了redis_info，就使用，不传就自己查一次
+    async fn deal_redis_info_related_info_rt_dto(&self, redis_connect_dto: &mut RedisConnectDto, redis_info: Option<RedisInfo>) -> Result<String> {
         let mut username = redis_connect_dto.username.clone();
         let mut password = redis_connect_dto.password.clone();
         let mut old_username = None;
         let mut old_password = None;
 
         if redis_connect_dto.id.is_some() {
-            let redis_info_option = self.do_find_by_id(redis_connect_dto.id.unwrap()).await?;
-            if redis_info_option.is_some() {
-                let redis_info = redis_info_option.unwrap();
+            if redis_info.is_some() {
                 old_username = redis_info.username;
                 old_password = redis_info.password;
+            } else {
+                let redis_info_option = self.do_find_by_id(redis_connect_dto.id.unwrap()).await?;
+                if redis_info_option.is_some() {
+                    let redis_info = redis_info_option.unwrap();
+                    old_username = redis_info.username;
+                    old_password = redis_info.password;
+                } else {
+                    return Err(crate::mix::error::Error::from("redisInfo.record.notFind"));
+                }
             }
         }
 
