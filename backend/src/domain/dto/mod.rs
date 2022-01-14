@@ -21,6 +21,7 @@ pub fn convert_rbatis_page_resp_and_convert<T, F, R>(page_resp: Page<T>, f: F) -
     RespVO {
         success: true,
         msg: None,
+        show_type: None,
         data: Some(page_resp.records.into_iter().map(f).collect()),
         error_code: None,
         current: Some(page_resp.page_no),
@@ -34,6 +35,7 @@ pub fn convert_rbatis_page_resp<T>(page_resp: Page<T>) -> RespVO<Vec<T>>
     RespVO {
         success: true,
         msg: None,
+        show_type: None,
         data: Some(page_resp.records),
         error_code: None,
         current: Some(page_resp.page_no),

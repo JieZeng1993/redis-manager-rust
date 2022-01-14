@@ -192,7 +192,7 @@ const RedisInfo: React.FC = () => {
               type="primary"
               key="primary"
               onClick={() => {
-                // handleModalVisible(true);
+                history.push(`/redisManage/redisInfo/add`);
               }}
             >
               <PlusOutlined/> <FormattedMessage id="new" defaultMessage="New"/>
