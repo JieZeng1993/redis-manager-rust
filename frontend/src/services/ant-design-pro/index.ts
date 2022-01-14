@@ -20,6 +20,7 @@ export interface Response<T = any> {
   data?: T; // response data
   errorCode?: string; // code for errorType
   msg?: string; // message display to user
+  showType?: number;// error display type： 0 silent; 1 message.warn; 2 message.error; 4 notification; 9 page
   current?: number, //page request valid
   pageSize?: number, //page request valid
   total?: number, //page request valid

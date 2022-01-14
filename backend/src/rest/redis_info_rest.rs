@@ -63,10 +63,10 @@ enum RedisConnectTestResponse {
 }
 
 #[derive(ApiResponse)]
-enum UpdateUserResponse {
+enum UpdateByConnectResponse {
     /// Return the redis info.
     #[oai(status = 200)]
-    Ok(Json<RespVO<u64>>),
+    Ok(Json<RespVO<String>>),
     /// Return when the redis infois not found.
     #[oai(status = 404)]
     NotFound,
@@ -115,6 +115,15 @@ impl RedisInfoRest {
         }
     }
 
+    ///实时查询节点相关信息
+    #[oai(path = "/redisInfo/updateByConnect", method = "post", tag = "ApiTags::RedisInfo")]
+    async fn update_by_connect(&self, redis_connect_dto: Json<RedisConnectDto>, session: &Session) -> UpdateByConnectResponse {
+        let result = SERVICE_CONTEXT.redis_info_service.update_by_connect(redis_connect_dto.0, session).await;
+        match result {
+            Ok(msg) => UpdateByConnectResponse::Ok(Json(RespVO::success_msg(msg.to_string()))),
+            Err(error) => UpdateByConnectResponse::Ok(Json(RespVO::from_error_code(error)))
+        }
+    }
 
     // #[oai(path = "/redisInfo", method = "put", tag = "ApiTags::RedisInfo")]
     // async fn update_redis_info(&self, user_update_dto: Json<UserUpdateDto>, session: &Session) -> UpdateUserResponse {

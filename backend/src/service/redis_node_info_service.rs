@@ -61,8 +61,14 @@ impl RedisNodeInfoService {
                 redis_node_info_in_db.master_id = redis_node_info.master_id.clone();
                 redis_node_info_in_db.node_role = redis_node_info.node_role.clone();
                 redis_node_info_in_db.node_status = redis_node_info.node_status.clone();
-                redis_node_info_in_db.slot_from = redis_node_info.slot_from;
-                redis_node_info_in_db.slot_from = redis_node_info.slot_from;
+                redis_node_info_in_db.slot_from = match redis_node_info.slot_from {
+                    Some(_) => { redis_node_info.slot_from }
+                    None => { Some(crate::config::constant::INVALID_NUM as u16) }
+                };
+                redis_node_info_in_db.slot_to = match redis_node_info.slot_to {
+                    Some(_) => { redis_node_info.slot_to }
+                    None => { Some(crate::config::constant::INVALID_NUM as u16) }
+                };
                 redis_node_info_in_db.update_time = redis_node_info.update_time;
                 redis_node_info_in_db.update_id = redis_node_info.update_id;
                 update_redis_node_infos.push(redis_node_info_in_db);
@@ -76,8 +82,14 @@ impl RedisNodeInfoService {
                     port: redis_node_info.port.clone(),
                     node_role: redis_node_info.node_role.clone(),
                     node_status: redis_node_info.node_status.clone(),
-                    slot_from: redis_node_info.slot_from,
-                    slot_to: redis_node_info.slot_to,
+                    slot_from: match redis_node_info.slot_from {
+                        Some(_) => { redis_node_info.slot_from }
+                        None => { Some(crate::config::constant::INVALID_NUM as u16) }
+                    },
+                    slot_to: match redis_node_info.slot_to {
+                        Some(_) => { redis_node_info.slot_to }
+                        None => { Some(crate::config::constant::INVALID_NUM as u16) }
+                    },
                     create_time: redis_node_info.create_time,
                     create_id: redis_node_info.create_id,
                     update_time: redis_node_info.update_time,

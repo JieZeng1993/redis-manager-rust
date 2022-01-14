@@ -75,7 +75,7 @@ impl RedisInfoService {
     }
 
     ///通过连接信息信息，进行更新
-    pub async fn update_by_connect(&self, mut redis_connect_dto: RedisConnectDto, session: &Session) -> Result<String> {
+    pub async fn update_by_connect(&self, mut redis_connect_dto: RedisConnectDto, session: &Session) -> Result<&str> {
         if redis_connect_dto.id.is_none() {
             return Err(crate::mix::error::Error::from("redisInfo.update.id.notExist"));
         }
@@ -100,9 +100,11 @@ impl RedisInfoService {
             update_id: session.id,
         };
 
+        log!(Level::Info,"redis_info:{:?}",redis_info);
+
         let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
 
-        if let Err(error) = SERVICE_CONTEXT.rbatis.save(&redis_info, &[]).await {
+        if let Err(error) = SERVICE_CONTEXT.rbatis.update_by_column(RedisInfo::id(), &redis_info).await {
             tx.rollback().await?;
             return Err(crate::mix::error::Error::from("db.insert.fail"));
         }
@@ -131,7 +133,7 @@ impl RedisInfoService {
         }
 
         tx.commit().await?;
-        return Ok("operateSuccess".to_string());
+        return Ok("operateSuccess");
     }
 
     //连接测试
@@ -229,7 +231,7 @@ impl RedisInfoService {
 
     /// * `redis_connect_dto` 外部传入的请求，如果请求没有携带username和password，就用数据库中的，但是会无法处理，之前有密码，后来没密码这种情况
     /// * `redis_info` 传入了redis_info，就使用，不传就自己查一次
-    async fn deal_redis_info_related_info_rt_dto(&self, redis_connect_dto: &mut RedisConnectDto, redis_info: Option<RedisInfo>) -> Result<String> {
+    async fn deal_redis_info_related_info_rt_dto(&self, redis_connect_dto: &mut RedisConnectDto, redis_info: Option<RedisInfo>) -> Result<()> {
         let mut username = redis_connect_dto.username.clone();
         let mut password = redis_connect_dto.password.clone();
         let mut old_username = None;
@@ -275,7 +277,7 @@ impl RedisInfoService {
         redis_connect_dto.username = username;
         redis_connect_dto.password = password;
 
-        Ok("".to_string())
+        Ok(())
     }
 }
 

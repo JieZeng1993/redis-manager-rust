@@ -1,0 +1,1 @@
+pub static INVALID_NUM: i32 = -10;

@@ -1,6 +1,11 @@
 // @ts-ignore
 /* eslint-disable */
-import { request } from 'umi';
+import {request} from 'umi';
+
+/**
+ * 全局无效id
+ */
+export const INVALID_NUMBER = -10;
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {

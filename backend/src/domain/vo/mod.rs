@@ -21,6 +21,8 @@ pub const CODE_COMMON_FAIL: &str = "COMMON_FAIL";
 pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON {
     pub success: bool,
     pub msg: Option<String>,
+    //error display type： 0 silent; 1 message.warn; 2 message.error; 4 notification; 9 page
+    pub show_type: Option<i16>,
     pub data: Option<T>,
     pub error_code: Option<String>,
     pub current: Option<u64>,
@@ -40,6 +42,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
                 current: None,
                 page_size: None,
                 total: None,
+                show_type: None,
             }
         } else {
             Self {
@@ -50,6 +53,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
                 current: None,
                 page_size: None,
                 total: None,
+                show_type: None,
             }
         }
     }
@@ -63,6 +67,33 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             current: None,
             page_size: None,
             total: None,
+            show_type: None,
+        }
+    }
+
+    pub fn from_move(arg: T) -> Self {
+        Self {
+            success: true,
+            msg: None,
+            error_code: None,
+            data: Some(arg),
+            current: None,
+            page_size: None,
+            total: None,
+            show_type: None,
+        }
+    }
+
+    pub fn success_msg(msg: String) -> Self {
+        Self {
+            success: true,
+            msg: Some(msg),
+            error_code: None,
+            data: None,
+            current: None,
+            page_size: None,
+            total: None,
+            show_type: None,
         }
     }
 
@@ -75,6 +106,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             current: None,
             page_size: None,
             total: None,
+            show_type: None,
         }
     }
 
@@ -91,6 +123,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             current: None,
             page_size: None,
             total: None,
+            show_type: None,
         }
     }
 
@@ -105,6 +138,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             current: None,
             page_size: None,
             total: None,
+            show_type: None,
         }
     }
 
@@ -121,6 +155,7 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             current: None,
             page_size: None,
             total: None,
+            show_type: None,
         }
     }
 }

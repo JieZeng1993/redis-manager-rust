@@ -1,15 +1,21 @@
 import React, {useRef, useState} from 'react';
 import type {FormInstance} from 'antd';
-import {Button, Card, Descriptions, Result} from 'antd';
+import {Button, Card, Descriptions, message, Result} from 'antd';
 import {PageContainer} from '@ant-design/pro-layout';
 import ProForm, {ProFormDigit, ProFormText, StepsForm} from '@ant-design/pro-form';
 import styles from './style.less';
 import {history, useIntl, useParams} from 'umi';
-import {redisInfoFindBy, redisInfoFindRelatedInfoRt, requestConnectTest} from "@/services/ant-design-pro/redisApi";
+import {
+  redisInfoFindBy,
+  redisInfoFindRelatedInfoRt,
+  requestConnectTest,
+  updateByConnect
+} from "@/services/ant-design-pro/redisApi";
 import type {ProColumns} from "@ant-design/pro-table";
 import ProTable from "@ant-design/pro-table";
 import {FormattedMessage} from "@@/plugin-locale/localeExports";
 import {toNumber} from "lodash";
+import {INVALID_NUMBER} from "@/services/ant-design-pro/api";
 
 const StepDescriptions: React.FC<{
   stepData: REDIS_API.RedisInfoVo | undefined;
@@ -19,7 +25,7 @@ const StepDescriptions: React.FC<{
   const intl = useIntl();
 
   if (stepData) {
-    const {name, host, port, username, password, clusterType} = stepData;
+    const {name, host, port} = stepData;
     return (
       <Descriptions column={1} bordered={bordered}>
         <Descriptions.Item label={intl.formatMessage({
@@ -34,18 +40,6 @@ const StepDescriptions: React.FC<{
           id: 'redisManage.redisInfo.redisInfoVo.port',
           defaultMessage: 'port',
         })}> {port}</Descriptions.Item>
-        <Descriptions.Item label={intl.formatMessage({
-          id: 'redisManage.redisInfo.redisInfoVo.username',
-          defaultMessage: 'username',
-        })}> {username}</Descriptions.Item>
-        <Descriptions.Item label={intl.formatMessage({
-          id: 'redisManage.redisInfo.redisInfoVo.password',
-          defaultMessage: 'password',
-        })}> {password}</Descriptions.Item>
-        <Descriptions.Item label={intl.formatMessage({
-          id: 'redisManage.redisInfo.redisInfoVo.clusterType',
-          defaultMessage: 'clusterType',
-        })}> {clusterType}</Descriptions.Item>
       </Descriptions>
     );
   } else {
@@ -63,17 +57,18 @@ const StepDescriptions: React.FC<{
 const StepResult: React.FC<{
   onFinish: () => Promise<void>;
 }> = (props) => {
+
   return (
     <Result
       status="success"
       title="操作成功"
-      subTitle="预计两小时内到账"
+      subTitle="返回查询redis信息"
       extra={
         <>
           <Button type="primary" onClick={props.onFinish}>
-            再转一笔
+            返回
           </Button>
-          <Button>查看账单</Button>
+          {/*<Button>查看账单</Button>*/}
         </>
       }
       className={styles.result}
@@ -84,15 +79,14 @@ const StepResult: React.FC<{
 };
 
 const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
+  //国际化
+  const intl = useIntl();
   // @ts-ignore
   const {id} = useParams();
   const infoParams = {id: id};
 
   const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
   const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisConnectDto>();
-
-  //保存最新的值，方便保存使用
-  let nodeInfoData: REDIS_API.RedisNodeInfoVo[] = [];
 
   const [current, setCurrent] = useState(0);
 
@@ -126,8 +120,16 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
 
   //处理新数据没有id的情况
   function redisInfoFindRelatedInfoDeal(data: REDIS_API.RedisNodeInfoVo[]) {
-    nodeInfoData = data;
     data.forEach(redisInfoFindRelatedInfoItem => {
+
+      if (redisInfoFindRelatedInfoItem?.slotFrom == INVALID_NUMBER) {
+        redisInfoFindRelatedInfoItem.slotFrom = undefined;
+      }
+
+      if (redisInfoFindRelatedInfoItem?.slotTo == INVALID_NUMBER) {
+        redisInfoFindRelatedInfoItem.slotTo = undefined;
+      }
+
       if (redisInfoFindRelatedInfoItem?.id) {
         return;
       }
@@ -140,8 +142,16 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
 
   async function saveRedisNodeInfo() {
     //存储逻辑
-    console.log(nodeInfoData);
-    return true;
+    try {
+      const result = await updateByConnect(nodeInfoParams || {});
+      if (result.success) {
+        message.success(result.msg);
+      }
+      return result.success;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
   }
 
   function connectTest(redisNodeInfo: REDIS_API.RedisNodeInfoVo) {
@@ -324,8 +334,6 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   ]
 
 
-  //国际化
-  const intl = useIntl();
   return (
     <PageContainer title={intl.formatMessage({
       id: 'redisManage.redisInfo.modify.title',
