@@ -3,7 +3,7 @@ use std::error::Error;
 
 use itertools::Itertools;
 use log::{Level, log};
-use rbatis::crud::CRUD;
+use rbatis::crud::{CRUD, CRUDMut};
 use rbatis::DateTimeNative;
 use rbatis::plugin::page::{Page, PageRequest};
 use redis::{AsyncCommands, ErrorKind, RedisFuture, RedisResult};
@@ -74,6 +74,64 @@ impl RedisInfoService {
         return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
     }
 
+    ///通过连接信息信息，进行新增
+    pub async fn add_by_connect(&self, mut redis_connect_dto: RedisConnectDto, session: &Session) -> Result<&str> {
+        //获取相关节点信息
+        let related_infos = self.related_info_rt_inner(&mut redis_connect_dto, None).await?;
+        let mut redis_info = RedisInfo {
+            id: None,
+            name: redis_connect_dto.name,
+            host: redis_connect_dto.host,
+            port: redis_connect_dto.port,
+            username: redis_connect_dto.username,
+            password: redis_connect_dto.password,
+            cluster_type: redis_connect_dto.cluster_type,
+            create_time: Some(DateTimeNative::now()),
+            create_id: session.id,
+            update_time: Some(DateTimeNative::now()),
+            update_id: session.id,
+        };
+
+        log!(Level::Info,"redis_info:{:?}",redis_info);
+
+        let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
+
+
+        match tx.save(&redis_info, &[]).await {
+            Err(error) => {
+                tx.rollback().await?;
+                return Err(crate::mix::error::Error::from("db.update.fail"));
+            }
+            Ok(execResult) => { redis_info.id = Some(execResult.last_insert_id.unwrap() as i32); }
+        }
+
+        let update_node_info_result = SERVICE_CONTEXT.redis_node_info_service.update_by_redis_info_id(redis_info.id.unwrap(),
+                                                                                                      related_infos.into_iter().map(|related_info| RedisNodeInfo {
+                                                                                                          id: None,
+                                                                                                          redis_info_id: None,
+                                                                                                          node_id: related_info.node_id,
+                                                                                                          master_id: related_info.master_id,
+                                                                                                          host: related_info.host,
+                                                                                                          port: related_info.port,
+                                                                                                          node_role: related_info.node_role,
+                                                                                                          node_status: related_info.node_status,
+                                                                                                          slot_from: related_info.slot_from,
+                                                                                                          slot_to: related_info.slot_to,
+                                                                                                          create_time: Some(DateTimeNative::now()),
+                                                                                                          create_id: session.id,
+                                                                                                          update_time: Some(DateTimeNative::now()),
+                                                                                                          update_id: session.id,
+                                                                                                      }).collect(), Some(&mut tx)).await;
+        if let Err(error) = update_node_info_result {
+            log!(Level::Error,"update data fail {}", error);
+            tx.rollback().await?;
+            return Err(crate::mix::error::Error::from("db.update.fail"));
+        }
+
+        tx.commit().await?;
+        return Ok("operateSuccess");
+    }
+
     ///通过连接信息信息，进行更新
     pub async fn update_by_connect(&self, mut redis_connect_dto: RedisConnectDto, session: &Session) -> Result<&str> {
         if redis_connect_dto.id.is_none() {
@@ -104,9 +162,9 @@ impl RedisInfoService {
 
         let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
 
-        if let Err(error) = SERVICE_CONTEXT.rbatis.update_by_column(RedisInfo::id(), &redis_info).await {
+        if let Err(error) = tx.update_by_column(RedisInfo::id(), &redis_info).await {
             tx.rollback().await?;
-            return Err(crate::mix::error::Error::from("db.insert.fail"));
+            return Err(crate::mix::error::Error::from("db.update.fail"));
         }
 
         let update_node_info_result = SERVICE_CONTEXT.redis_node_info_service.update_by_redis_info_id(redis_info.id.unwrap(),
@@ -125,7 +183,7 @@ impl RedisInfoService {
                                                                                                           create_id: session.id,
                                                                                                           update_time: Some(DateTimeNative::now()),
                                                                                                           update_id: session.id,
-                                                                                                      }).collect()).await;
+                                                                                                      }).collect(), Some(&mut tx)).await;
         if let Err(error) = update_node_info_result {
             log!(Level::Error,"update data fail {}", error);
             tx.rollback().await?;

@@ -1,7 +1,7 @@
 use std::borrow::{Borrow, BorrowMut};
 
 use itertools::Itertools;
-use rbatis::crud::CRUD;
+use rbatis::crud::{CRUD, CRUDMut};
 use rbatis::DateTimeNative;
 
 use crate::config::auth;
@@ -33,21 +33,42 @@ impl RedisNodeInfoService {
 
     ///后台用户根据id查找
     pub async fn find_by_redis_info_id(&self, redis_info_id: i32) -> Result<Vec<RedisNodeInfoVo>> {
-        let redis_node_infos = self.do_find_by_redis_info_id(redis_info_id).await?;
+        let redis_node_infos = self.do_find_by_redis_info_id(redis_info_id, None).await?;
         Ok(redis_node_infos.into_iter().map(convert_redis_info2redis_info_vo).collect())
     }
 
     /// 根据redis_info_id查询所有node信息
-    pub async fn do_find_by_redis_info_id(&self, redis_info_id: i32) -> Result<Vec<RedisNodeInfo>> {
+    pub async fn do_find_by_redis_info_id(&self, redis_info_id: i32, tx: Option<&mut rbatis::executor::RBatisTxExecutor<'_>>) -> Result<Vec<RedisNodeInfo>> {
         let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(RedisNodeInfo::redis_info_id(), redis_info_id);
-        return Ok(SERVICE_CONTEXT.rbatis.fetch_list_by_wrapper(wrapper).await?);
+        return if tx.is_some() {
+            Ok(tx.unwrap().fetch_list_by_wrapper(wrapper).await?)
+        } else {
+            Ok(SERVICE_CONTEXT.rbatis.fetch_list_by_wrapper(wrapper).await?)
+        };
     }
 
+    /// 有事务，就使用事务，没有就新建一个
+    pub async fn update_by_redis_info_id(&self, redis_info_id: i32, redis_node_infos: Vec<RedisNodeInfo>, tx: Option<&mut rbatis::executor::RBatisTxExecutor<'_>>) -> Result<()> {
+        if tx.is_some() {
+            //已经有事物
+            self.do_update_by_redis_info_id(redis_info_id, redis_node_infos, tx.unwrap()).await
+        } else {
+            let mut new_tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
+            let result = self.do_update_by_redis_info_id(redis_info_id, redis_node_infos, &mut new_tx).await;
+            if let Err(_) = result {
+                new_tx.rollback().await?;
+            } else {
+                new_tx.commit().await?;
+            }
+            result
+        }
+    }
     /// * `redis_info_id`
     /// * `redis_node_infos` 最新的相关信息
     /// 根据redis_info_id查出数据库中的数据，对比redis_node_infos，进行增加、更新、删除动作
-    pub async fn update_by_redis_info_id(&self, redis_info_id: i32, redis_node_infos: Vec<RedisNodeInfo>) -> Result<()> {
-        let redis_node_infos_in_db = self.do_find_by_redis_info_id(redis_info_id).await?;
+    pub async fn do_update_by_redis_info_id(&self, redis_info_id: i32, redis_node_infos: Vec<RedisNodeInfo>, tx: &mut rbatis::executor::RBatisTxExecutor<'_>) -> Result<()> {
+        let redis_node_infos_in_db = self.do_find_by_redis_info_id(redis_info_id, Some(tx)).await?;
+
         let mut add_redis_node_infos = vec![];
         let mut update_redis_node_infos = vec![];
         let mut delete_redis_node_info_ids = vec![];
@@ -105,9 +126,9 @@ impl RedisNodeInfoService {
             }
         }
 
-        SERVICE_CONTEXT.rbatis.save_batch(&add_redis_node_infos, &[]).await?;
-        SERVICE_CONTEXT.rbatis.update_batch_by_column(RedisNodeInfo::id(), &update_redis_node_infos).await?;
-        SERVICE_CONTEXT.rbatis.remove_batch_by_column::<RedisNodeInfo, _>(RedisNodeInfo::id(), &delete_redis_node_info_ids).await?;
+        tx.save_batch(&add_redis_node_infos, &[]).await?;
+        tx.update_batch_by_column(RedisNodeInfo::id(), &update_redis_node_infos).await?;
+        tx.remove_batch_by_column::<RedisNodeInfo, _>(RedisNodeInfo::id(), &delete_redis_node_info_ids).await?;
 
         Ok(())
     }

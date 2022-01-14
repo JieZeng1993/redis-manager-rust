@@ -63,8 +63,8 @@
         component: './RedisManage/RedisInfo/update',
       },
       {
-        path: '/redisManage/redisInfo/insert',
-        // name: 'redisInfoUpdate',
+        path: '/redisManage/redisInfo/add',
+        // name: 'redisInfoInsert',
         icon: 'smile',
         component: './RedisManage/RedisInfo/update',
       },

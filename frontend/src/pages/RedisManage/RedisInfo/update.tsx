@@ -6,6 +6,7 @@ import ProForm, {ProFormDigit, ProFormText, StepsForm} from '@ant-design/pro-for
 import styles from './style.less';
 import {history, useIntl, useParams} from 'umi';
 import {
+  addByConnect,
   redisInfoFindBy,
   redisInfoFindRelatedInfoRt,
   requestConnectTest,
@@ -88,6 +89,9 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   const [stepData, setStepData] = useState<REDIS_API.RedisInfoVo>();
   const [nodeInfoParams, setNodeInfoParams] = useState<REDIS_API.RedisConnectDto>();
 
+  //保存最新的值，方便保存使用
+  let nodeInfoData: REDIS_API.RedisNodeInfoVo[] = [];
+
   const [current, setCurrent] = useState(0);
 
   const formRef = useRef<FormInstance>();
@@ -120,6 +124,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
 
   //处理新数据没有id的情况
   function redisInfoFindRelatedInfoDeal(data: REDIS_API.RedisNodeInfoVo[]) {
+    nodeInfoData = data;
     data.forEach(redisInfoFindRelatedInfoItem => {
 
       if (redisInfoFindRelatedInfoItem?.slotFrom == INVALID_NUMBER) {
@@ -141,11 +146,26 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   }
 
   async function saveRedisNodeInfo() {
+    if (!nodeInfoData || nodeInfoData.length === 0) {
+      message.error("节点信息未加载成功，请检查相关信息是否正确，加载节点信息成功后，再保存")
+      return false;
+    }
+    const requestBody = nodeInfoParams || {};
     //存储逻辑
     try {
-      const result = await updateByConnect(nodeInfoParams || {});
+      let result;
+      if (requestBody.id) {
+        result = await updateByConnect(requestBody || {});
+      } else {
+        result = await addByConnect(requestBody || {});
+      }
+
       if (result.success) {
-        message.success(result.msg);
+        if (requestBody.id) {
+          message.success('更新成功');
+        } else {
+          message.success('新增成功');
+        }
       }
       return result.success;
     } catch (e) {
@@ -345,13 +365,25 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
       intl.formatMessage({
         id: 'add',
       }))
-    }>
+    }
+                   extra={[
+                     <Button key="back" onClick={() => history.goBack()}>返回</Button>
+                   ]}
+    >
       <Card bordered={false}>
         <StepsForm
           current={current}
           onCurrentChange={onCurrentChange}
           submitter={{
             render: (props, dom) => {
+              // if (props.step === 0){
+              //   return (
+              //     <Button type="primary" onClick={()=>props.onSubmit?.()}>
+              //       下一步
+              //     </Button>
+              //   );
+              // }
+
               if (props.step === 2) {
                 return null;
               }
@@ -451,7 +483,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
                     })
                   },
                 ]}
-                placeholder="6379"
+                placeholder="端口"
               />
             </ProForm.Group>
 
@@ -496,13 +528,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
             />
           </StepsForm.StepForm>
 
-          <StepsForm.StepForm title={intl.formatMessage({
-            id: 'confirm',
-            defaultMessage: 'confirm ',
-          }) + "redis" + intl.formatMessage({
-            id: 'relatedInformation',
-            defaultMessage: ' related information',
-          })}
+          <StepsForm.StepForm title="确认redis相关信息"
                               onFinish={saveRedisNodeInfo}
           >
             <ProTable<REDIS_API.RedisNodeInfoVo, REDIS_API.RedisConnectDto>

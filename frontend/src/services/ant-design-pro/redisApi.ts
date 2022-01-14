@@ -87,6 +87,15 @@ export async function updateByConnect(body: REDIS_API.RedisConnectDto, options?:
   });
 }
 
+export async function addByConnect(body: REDIS_API.RedisConnectDto, options?: { [key: string]: any }) {
+  return request<Response<string>>(`/api/redisInfo/addByConnect`, {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+
 // /** 获取当前的用户 GET /api/currentUser */
 // export async function currentUser(options?: { [key: string]: any }) {
 //   return request<Response<USER_API.CurrentUser>>('/api/user/loginUser', {
