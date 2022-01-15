@@ -126,7 +126,7 @@ export const request: RequestConfig = {
       if (authorization) {
         options.headers = {
           ...options.headers,
-          authorization: authorization
+          Authorization: authorization
         }
       }
 
