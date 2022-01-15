@@ -33,6 +33,29 @@ lazy_static!(
 
 impl RedisInfoService {
     ///根据id查找vo
+    pub async fn delete_by_id(&self, id: i32) -> Result<&str> {
+        let redis_info = self.do_find_by_id(id).await?;
+        match redis_info {
+            Some(_) => {
+                let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
+                if let Ok(_) =self.do_delete_by_id(id, &mut tx).await{
+                    tx.commit().await?;
+                }else {
+                    tx.rollback().await?;
+                }
+                Ok("删除成功")
+            }
+            None => Ok("记录已被删除")
+        }
+    }
+
+    pub async fn do_delete_by_id(&self, id: i32, tx: &mut rbatis::executor::RBatisTxExecutor<'_>) -> Result<()> {
+        log!(Level::Info,"删除开始");
+        tx.remove_by_column::<RedisInfo, _>(RedisInfo::id(), id).await?;
+        SERVICE_CONTEXT.redis_node_info_service.do_delete_by_redis_info_id(id, Some(tx)).await
+    }
+
+    ///根据id查找vo
     pub async fn find_by_id(&self, id: i32) -> Result<Option<RedisInfoVo>> {
         let redis_info = self.do_find_by_id(id).await?;
         match redis_info {
@@ -71,7 +94,7 @@ impl RedisInfoService {
     /// 根据id查找entity
     pub async fn do_find_by_id(&self, id: i32) -> Result<Option<RedisInfo>> {
         let wrapper = SERVICE_CONTEXT.rbatis.new_wrapper().eq(RedisInfo::id(), id);
-        return Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?);
+        Ok(SERVICE_CONTEXT.rbatis.fetch_by_wrapper(wrapper).await?)
     }
 
     ///通过连接信息信息，进行新增
@@ -95,7 +118,6 @@ impl RedisInfoService {
         log!(Level::Info,"redis_info:{:?}",redis_info);
 
         let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
-
 
         match tx.save(&redis_info, &[Skip::Value(rbson::Bson::Null)]).await {
             Err(error) => {

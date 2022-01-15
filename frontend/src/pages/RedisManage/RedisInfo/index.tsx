@@ -2,9 +2,9 @@ import React, {useRef, useState} from "react";
 import {PageContainer} from "@ant-design/pro-layout";
 import type {ActionType, ProColumns} from '@ant-design/pro-table';
 import ProTable from '@ant-design/pro-table';
-import {Button, Drawer} from "antd";
+import {Button, Drawer, message, Popconfirm} from "antd";
 import {PlusOutlined} from "@ant-design/icons";
-import {redisInfoPage} from "@/services/ant-design-pro/redisApi";
+import {redisInfoDeleteById, redisInfoPage} from "@/services/ant-design-pro/redisApi";
 import type {ProDescriptionsItemProps} from "@ant-design/pro-descriptions";
 import ProDescriptions from "@ant-design/pro-descriptions";
 import UpdateForm from "./components/UpdateForm";
@@ -164,6 +164,17 @@ const RedisInfo: React.FC = () => {
           >
             <FormattedMessage id="modify" defaultMessage="修改"/>
           </a>,
+          <Popconfirm key="popconfirm" title={`确认删除吗?`} okText="是" cancelText="否" onConfirm={async () => {
+            const result = await redisInfoDeleteById(record.id || -1);
+            if (result.success) {
+              message.success(result.msg);
+              // @ts-ignore
+              actionRef.current.reload();
+            }
+          }}>
+            <a>删除</a>
+          </Popconfirm>
+
           // <a key="subscribeAlert" href="https://procomponents.ant.design/">
           //   <FormattedMessage
           //     id="pages.searchTable.subscribeAlert"

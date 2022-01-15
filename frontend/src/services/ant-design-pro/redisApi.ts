@@ -33,6 +33,13 @@ export async function redisInfoFindById(id: number) {
 }
 
 /** 登录接口 POST /api/redisInfo/:id */
+export async function redisInfoDeleteById(id: number) {
+  return request<Response<REDIS_API.RedisInfoVo>>(`/api/redisInfo/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/** 登录接口 POST /api/redisInfo/:id */
 export async function redisInfoFindBy(params: REDIS_API.RedisInfoVo, props: any) {
   const id = params?.id;
   if (id) {

@@ -86,6 +86,17 @@ enum AddByConnectResponse {
     InnerError,
 }
 
+#[derive(ApiResponse)]
+enum DeleteRedisInfoResponse {
+    /// Return the redis info.
+    #[oai(status = 200)]
+    Ok(Json<RespVO<String>>),
+    /// Return when the redis infois not found.
+    #[oai(status = 404)]
+    NotFound,
+    #[oai(status = 500)]
+    InnerError,
+}
 
 #[OpenApi]
 impl RedisInfoRest {
@@ -93,6 +104,18 @@ impl RedisInfoRest {
     async fn find_redis_info(&self, id: Path<i32>) -> FindRedisInfoResponse {
         let user = SERVICE_CONTEXT.redis_info_service.find_by_id(id.0).await;
         deal_find_redis_info(user)
+    }
+
+    #[oai(path = "/redisInfo/:id", method = "delete", tag = "ApiTags::RedisInfo")]
+    async fn delete_redis_info(&self, id: Path<i32>) -> DeleteRedisInfoResponse {
+        let result = SERVICE_CONTEXT.redis_info_service.delete_by_id(id.0).await;
+        match result {
+            Ok(msg) => { DeleteRedisInfoResponse::Ok(Json(RespVO::success_msg(msg.to_string()))) }
+            Err(error) => {
+                log::error!("删除失败：{}",error);
+                DeleteRedisInfoResponse::InnerError
+            }
+        }
     }
 
     #[oai(path = "/redisInfo/page", method = "post", tag = "ApiTags::RedisInfo")]
