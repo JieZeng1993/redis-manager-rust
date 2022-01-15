@@ -3,7 +3,7 @@ use std::error::Error;
 
 use itertools::Itertools;
 use log::{Level, log};
-use rbatis::crud::{CRUD, CRUDMut};
+use rbatis::crud::{CRUD, CRUDMut, Skip};
 use rbatis::DateTimeNative;
 use rbatis::plugin::page::{Page, PageRequest};
 use redis::{AsyncCommands, ErrorKind, RedisFuture, RedisResult};
@@ -97,7 +97,7 @@ impl RedisInfoService {
         let mut tx = SERVICE_CONTEXT.rbatis.acquire_begin().await?;
 
 
-        match tx.save(&redis_info, &[]).await {
+        match tx.save(&redis_info, &[Skip::Value(rbson::Bson::Null)]).await {
             Err(error) => {
                 tx.rollback().await?;
                 return Err(crate::mix::error::Error::from("db.update.fail"));
