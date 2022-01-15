@@ -94,6 +94,8 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
 
   const [current, setCurrent] = useState(0);
 
+  const [loadings, setLoading] = useState({});
+
   const formRef = useRef<FormInstance>();
 
   function onCurrentChange(number: number) {
@@ -175,9 +177,19 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
   }
 
   function connectTest(redisNodeInfo: REDIS_API.RedisNodeInfoVo) {
-    if (redisNodeInfo.connecting) {
+    const loading_key = redisNodeInfo.id||"";
+    if (loadings[loading_key]) {
       return;
     }
+
+    // @ts-ignore
+    setLoading(({oldLoadings})=>{
+      const newLoadings = {...oldLoadings};
+      newLoadings[loading_key] = true;
+      console.log(JSON.stringify(newLoadings));
+      return newLoadings;
+    });
+
     redisNodeInfo.connecting = true;
 
     const request: REDIS_API.RedisConnectDto = {
@@ -189,11 +201,17 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
       request: true,
     }
 
-    requestConnectTest(request).then((result) => {
-      //存储逻辑
-      console.log(JSON.stringify(result));
+    requestConnectTest(request).then(()=>{
+      message.success("连接成功");
     }).finally(() => {
-      redisNodeInfo.connecting = false;
+      // @ts-ignore
+      setLoading(({oldLoadings})=>{
+        const newLoadings = {...oldLoadings};
+        console.log(JSON.stringify(newLoadings));
+        delete newLoadings[loading_key];
+        console.log(JSON.stringify(newLoadings));
+        return newLoadings;
+      });
     })
   }
 
@@ -335,7 +353,7 @@ const RedisInfoUpdate: React.FC<Record<string, any>> = () => {
         <Button
           type={'link'}
           key="redisConnectTestButton"
-          loading={record.connecting}
+          loading={loadings[record.id || ""]}
           onClick={() => {
             connectTest(record)
           }}
