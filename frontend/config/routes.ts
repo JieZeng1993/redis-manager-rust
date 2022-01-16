@@ -68,6 +68,12 @@
         icon: 'smile',
         component: './RedisManage/RedisInfo/update',
       },
+      {
+        path: '/redisManage/query',
+        name: 'query',
+        icon: 'smile',
+        component: './RedisManage/Query',
+      },
     ],
   },
   {

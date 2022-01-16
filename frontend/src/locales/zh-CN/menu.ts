@@ -52,4 +52,5 @@ export default {
   'menu.redisManage': 'redis管理',
   'menu.redisManage.redisInfo': 'redis信息',
   'menu.redisManage.redisInfoUpdate': 'redis信息更新',
+  'menu.redisManage.query':'查询',
 };
