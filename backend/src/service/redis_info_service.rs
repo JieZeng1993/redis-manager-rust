@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 use std::error::Error;
 
-use itertools::Itertools;
+
 use log::{Level, log};
 use rbatis::crud::{CRUD, CRUDMut, Skip};
 use rbatis::DateTimeNative;
@@ -413,7 +413,7 @@ pub async fn get_conn(client: redis::Client) -> Result<redis::aio::MultiplexedCo
 ///  ["c286a761c3c4c69465503713af358058cef8011a", "172.29.43.202:6374@16374", "slave", "e9cfadca9f063284a13494ff3a10809dd2144d6b", "0", "1641902794546", "3", "connected"]
 ///  ["e9cfadca9f063284a13494ff3a10809dd2144d6b", "172.29.43.202:6373@16373", "master", "-", "0", "1641902796000", "3", "connected", "10923-16383"]
 pub fn convert_str2redis_node_info(cluster_node_info: &str) -> Option<RedisNodeInfoVo> {
-    let cluster_node_info = cluster_node_info.split_ascii_whitespace().collect_vec();
+    let cluster_node_info:Vec<&str> = cluster_node_info.split_ascii_whitespace().collect();
 
     if cluster_node_info.is_empty() {
         return None;
@@ -487,10 +487,9 @@ pub fn convert_str2redis_node_info(cluster_node_info: &str) -> Option<RedisNodeI
 
 
 mod test {
-    use itertools::Itertools;
     use log::{Level, log};
     use redis::{AsyncCommands, ErrorKind, RedisResult};
-    use tokio_test::block_on;
+
 
     use crate::domain::vo::redis_node_info::RedisNodeInfoVo;
     use crate::service::redis_info_service::get_conn;
@@ -521,9 +520,9 @@ mod test {
     // a09d6f02e736f433664485f64ded693942eb80a7 172.31.157.81:6375@16375 myself,slave 2740fde9a37aca6e231e04b2f30653be48653adb 0 1641829840000 1 connected
     // 2740fde9a37aca6e231e04b2f30653be48653adb 172.31.157.81:6371@16371 master - 0 1641829837617 1 connected 0-5460
 
-    #[test]
-    fn test_cluster_nodes() {
-        block_on(async {
+    #[tokio::test]
+    async fn test_cluster_nodes() {
+
             let mut client = redis::Client::open(redis::ConnectionInfo {
                 addr: redis::ConnectionAddr::Tcp("localhost".to_string(), 6371),
                 redis: redis::RedisConnectionInfo {
@@ -602,7 +601,7 @@ mod test {
 
 
             println!("{:?}", cluster_nodes);
-        });
+
     }
 
     #[test]

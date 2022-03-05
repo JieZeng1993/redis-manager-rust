@@ -1,6 +1,5 @@
 use std::borrow::{Borrow, BorrowMut};
 
-use itertools::Itertools;
 use rbatis::crud::{CRUD, CRUDMut};
 use rbatis::DateTimeNative;
 
@@ -145,7 +144,6 @@ impl RedisNodeInfoService {
 }
 
 mod test {
-    use itertools::Itertools;
     use log::{Level, log};
 
     #[derive(Debug, Clone)]
