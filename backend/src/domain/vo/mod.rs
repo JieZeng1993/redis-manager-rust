@@ -1,10 +1,14 @@
-use poem_openapi::Object;
+use poem::{IntoResponse, Response};
+use poem::http::{header, StatusCode};
+use poem_openapi::{Object,ApiResponse};
 use poem_openapi::payload::Payload;
 use poem_openapi::registry::MetaSchemaRef;
 use poem_openapi::types::{ParseFromJSON, ToJSON};
 use serde::{Deserialize, Serialize};
 
 use crate::mix::error::Error;
+use crate::mix::error::Result;
+use crate::rest::RespError;
 use crate::service::SERVICE_CONTEXT;
 
 pub mod user1;
@@ -32,32 +36,6 @@ pub struct RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + 
 
 impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + ParseFromJSON + ToJSON
 {
-    pub fn from_result(arg: &Result<T, Error>) -> Self {
-        if arg.is_ok() {
-            Self {
-                success: true,
-                msg: None,
-                error_code: None,
-                data: arg.clone().ok(),
-                current: None,
-                page_size: None,
-                total: None,
-                show_type: None,
-            }
-        } else {
-            Self {
-                success: false,
-                msg: Some(arg.clone().err().unwrap().to_string()),
-                error_code: None,
-                data: None,
-                current: None,
-                page_size: None,
-                total: None,
-                show_type: None,
-            }
-        }
-    }
-
     pub fn from(arg: &T) -> Self {
         Self {
             success: true,
@@ -157,6 +135,97 @@ impl<T> RespVO<T> where T: Sync + Send + Clone + poem_openapi::types::Type + Par
             total: None,
             show_type: None,
         }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+#[derive(ApiResponse)]
+pub struct Resp<T> where T: Serialize + Send {
+    pub success: bool,
+    pub msg: Option<String>,
+    //error display type： 0 silent; 1 message.warn; 2 message.error; 4 notification; 9 page
+    pub show_type: Option<i16>,
+    pub data: Option<T>,
+    pub error_code: Option<String>,
+    pub current: Option<u64>,
+    pub page_size: Option<u64>,
+    pub total: Option<u64>,
+}
+
+impl<T> Resp<T> where T: Serialize + Send {
+    pub fn from(arg: T) -> Self {
+        Self {
+            success: true,
+            msg: None,
+            error_code: None,
+            data: Some(arg),
+            current: None,
+            page_size: None,
+            total: None,
+            show_type: None,
+        }
+    }
+
+    pub fn not_found() -> Self {
+        Self {
+            success: false,
+            msg: StatusCode::NOT_FOUND.canonical_reason().map(|reason| { reason.to_string() }),
+            error_code: Some(StatusCode::NOT_FOUND.as_u16().to_string()),
+            data: None,
+            current: None,
+            page_size: None,
+            total: None,
+            show_type: None,
+        }
+    }
+
+    pub fn error(error: Error) -> Self {
+        Self {
+            success: false,
+            msg: Some(error.to_string()),
+            error_code: Some(StatusCode::BAD_REQUEST.as_u16().to_string()),
+            data: None,
+            current: None,
+            page_size: None,
+            total: None,
+            show_type: None,
+        }
+    }
+
+    pub fn from_result(arg: Result<Option<T>>) -> Self {
+        match arg {
+            Ok(arg) => match arg {
+                Some(user) => Resp::from(user),
+                None => Resp::not_found(),
+            },
+            Err(error) => {
+                Resp::error(error)
+            }
+        }
+    }
+}
+
+impl<T> IntoResponse for Resp<T> where T: Serialize + Send {
+    fn into_response(self) -> Response {
+        if self.error_code.is_some() && self.error_code.unwrap().eq(&RespError::UNKNOWN.to_string()) {
+            return Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body("unknown");
+        }
+
+        let data = match serde_json::to_vec(&self) {
+            Ok(data) => data,
+            Err(err) => {
+                return Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(err.to_string());
+            }
+        };
+
+        Response::builder()
+            .header(header::CONTENT_TYPE, "application/json; charset=utf-8")
+            .body(data)
     }
 }
 

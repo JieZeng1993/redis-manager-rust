@@ -7,7 +7,7 @@ use poem_openapi::{
 
 use crate::config::auth::Session;
 use crate::domain::dto::user::{UserLoginDto, UserUpdateDto};
-use crate::domain::vo::RespVO;
+use crate::domain::vo::{Resp, RespVO};
 use crate::domain::vo::user::{LoginVo, UserVo};
 use crate::domain::vo::user1::User1Vo;
 use crate::mix::error::Error;
@@ -85,9 +85,8 @@ impl UserRest {
     }
 
     #[oai(path = "/user/:id", method = "get", tag = "ApiTags::User")]
-    async fn find_user(&self, id: Path<i32>) -> FindUserResponse {
-        let user = SERVICE_CONTEXT.user_service.find_by_id(*id).await;
-        deal_find_user(user)
+    async fn find_user(&self, id: Path<i32>) -> Resp<UserVo> {
+        Resp::from_result(SERVICE_CONTEXT.user_service.find_by_id(*id).await)
     }
 
     ///获取当前已登录的用户信息
